@@ -1,19 +1,28 @@
 package parser
 
-import "fmt"
+import (
+	"runtime"
+	"strings"
+)
 
-// command is used for storing the properties of the inputted command after parsing
-type command struct {
-	name      string
-	options   []string
-	arguments []string
+// Command is used for storing the properties of the inputted command after parsing
+type Command struct {
+	Name      string
+	Options   []string
+	Arguments []string
 }
 
-func parse(text string) []command {
-	fmt.Println(text)
-	var c command
-	c.name = text
-	parsedCommand := make([]command, 1)
+// Parse parses the string parameter text which should be an inputted command
+func Parse(text string) []Command {
+	if runtime.GOOS == "windows" {
+		text = strings.TrimRight(text, "\r\n")
+	} else {
+		text = strings.TrimRight(text, "\n")
+	}
+
+	var c Command
+	c.Name = text
+	parsedCommand := make([]Command, 1)
 	parsedCommand[0] = c
 	return parsedCommand
 }

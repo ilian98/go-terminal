@@ -14,7 +14,6 @@ func main() {
 		panic("Fatal error - cannot get current path!")
 	}
 	reader := bufio.NewReader(os.Stdin)
-	var text string
 	for {
 		fmt.Println(path)
 		fmt.Print("$ ")
@@ -23,9 +22,10 @@ func main() {
 			fmt.Println("Couldn't read command!")
 			continue
 		}
-		parsedCommand := parse(text)
-		if parsedCommand.name == "exit" {
+		parsedCommand := parser.Parse(text)
+		if parsedCommand[0].Name == "exit" {
 			break
 		}
+		fmt.Println("")
 	}
 }
