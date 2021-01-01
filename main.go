@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+
+	"github.com/ilian98/go-terminal/parser"
 )
 
 func main() {
@@ -12,13 +14,18 @@ func main() {
 		panic("Fatal error - cannot get current path!")
 	}
 	reader := bufio.NewReader(os.Stdin)
+	var text string
 	for {
 		fmt.Println(path)
 		fmt.Print("$ ")
 		text, err := reader.ReadString('\n')
 		if err != nil {
 			fmt.Println("Couldn't read command!")
+			continue
 		}
-		fmt.Println(text)
+		parsedCommand := parse(text)
+		if parsedCommand.name == "exit" {
+			break
+		}
 	}
 }
