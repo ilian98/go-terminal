@@ -9,6 +9,8 @@ import (
 )
 
 func main() {
+	exitCommands := [...]string{"exit", "logout", "bye"}
+
 	path, err := os.Getwd()
 	if err != nil {
 		panic("Fatal error - cannot get current path!")
@@ -23,8 +25,13 @@ func main() {
 			continue
 		}
 		parsedCommand := parser.Parse(text)
-		if parsedCommand[0].Name == "exit" {
-			break
+		for _, exitCommand := range exitCommands {
+			if parsedCommand[0].Name == exitCommand {
+				if exitCommand == "bye" {
+					fmt.Println("bye")
+				}
+				return
+			}
 		}
 		fmt.Println("")
 	}
