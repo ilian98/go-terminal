@@ -1,6 +1,8 @@
 package parser
 
 import (
+	"errors"
+	"fmt"
 	"runtime"
 	"strings"
 )
@@ -10,38 +12,12 @@ type Command struct {
 	Name      string
 	Options   []string
 	Arguments []string
+	Input     string // Empty Input would mean that we will use stdin for the command, otherwise it would be the name of the input file
+	Output    string // Analogous to Input
+	BgRun     bool
 }
 
-// Equal is a method for checking if two Commands are equal
-func (c1 *Command) Equal(c2 Command) bool {
-	if c1.Name != c2.Name {
-		return false
-	}
-	if len(c1.Options) != len(c2.Options) {
-		return false
-	}
-	for ind := range c1.Options {
-		if c1.Options[ind] != c2.Options[ind] {
-			return false
-		}
-	}
-	if len(c1.Arguments) != len(c2.Arguments) {
-		return false
-	}
-	for ind := range c1.Arguments {
-		if c1.Arguments[ind] != c2.Arguments[ind] {
-			return false
-		}
-	}
-	return true
-}
-
-// NotEqual is method for checking if two Commands are different
-func (c1 *Command) NotEqual(c2 Command) bool {
-	return !c1.Equal(c2)
-}
-
-// replaceEnclose replaces only those target characters with value that are enclosed in "" ""
+// replaceEnclose replaces only those target characters with value that are enclosed in quotest
 func replaceEnclosed(text string, target byte, value byte) string {
 	byteText := []byte(text)
 	quotes := 0
@@ -56,7 +32,7 @@ func replaceEnclosed(text string, target byte, value byte) string {
 	return string(byteText)
 }
 
-func parseCommandText(commandText string) Command {
+func parseCommandText(commandText string) (*Command, error) {
 	commandText = strings.Trim(commandText, " \t")
 	var c Command
 
@@ -67,19 +43,39 @@ func parseCommandText(commandText string) Command {
 		words[i] = replaceEnclosed(word, 0, ' ')
 	}
 
-	if len(words) == 0 {
-		// Error here
+	if len(words) == 1 && len(words[0]) == 0 {
+		return nil, errors.New("empty command")
 	}
 	c.Name = words[0]
 	c.Options = make([]string, 0)
 	c.Arguments = make([]string, 0)
+	c.BgRun = false
 	for _, word := range words[1:] {
 		word = strings.Trim(word, "\t")
 		if len(word) == 0 {
 			continue
 		}
+		if word == "&" {
+			c.BgRun = true
+			continue
+		}
+
 		if word[0] == '-' {
 			c.Options = append(c.Options, word[1:])
+		} else if word[0] == '<' {
+			// Last argument with '<' will be considered for input, others will be ignored
+			if word[1] == '"' && word[len(word)-1] == '"' {
+				c.Input = word[2 : len(word)-1]
+			} else {
+				c.Input = word[1:]
+			}
+		} else if word[0] == '>' {
+			// Last argument starting with '>' will be considered for output, others will be ignored
+			if word[1] == '"' && word[len(word)-1] == '"' {
+				c.Output = word[2 : len(word)-1]
+			} else {
+				c.Output = word[1:]
+			}
 		} else {
 			if len(word) > 2 && word[0] == '"' && word[len(word)-1] == '"' {
 				c.Arguments = append(c.Arguments, word[1:len(word)-1])
@@ -88,11 +84,11 @@ func parseCommandText(commandText string) Command {
 			}
 		}
 	}
-	return c
+	return &c, nil
 }
 
 // Parse parses the string parameter text which should be an inputted command
-func Parse(text string) []Command {
+func Parse(text string) ([]Command, error) {
 	if runtime.GOOS == "windows" {
 		text = strings.TrimRight(text, "\r\n")
 	} else {
@@ -109,7 +105,11 @@ func Parse(text string) []Command {
 	}
 
 	for _, commandText := range commandsText {
-		parsedCommand = append(parsedCommand, parseCommandText(commandText))
+		command, err := parseCommandText(commandText)
+		if err != nil {
+			return nil, fmt.Errorf("Error when parsing command %s: %w", commandText, err)
+		}
+		parsedCommand = append(parsedCommand, *command)
 	}
-	return parsedCommand
+	return parsedCommand, nil
 }
