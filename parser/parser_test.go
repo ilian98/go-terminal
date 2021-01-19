@@ -150,11 +150,11 @@ func commandsToString(commands []Command) string {
 	}
 	return output
 }
-func testingParse(t *testing.T, text string, expectedResult []Command, expectedErr string) {
+func testingParse(t *testing.T, text string, expectedResult []Command, expectedErr error) {
 	result, err := Parse(text)
 	if err != nil {
-		if errors.Is(err, errors.New(expectedErr)) {
-			t.Errorf("Expected %s, but got: %v\n", expectedErr, errors.Unwrap(err))
+		if !errors.Is(err, expectedErr) {
+			t.Errorf("Expected %v, but got: %v.\n", expectedErr, errors.Unwrap(err))
 		}
 		if result != nil {
 			t.Errorf("Expected result from parsing to be nil\n")
@@ -174,37 +174,37 @@ func TestParse(t *testing.T) {
 	var tests = []struct {
 		text   string
 		result []Command
-		err    string
+		err    error
 	}{
-		{"exit", []Command{newCommand("exit", []string{}, []string{})}, ""},
+		{"exit", []Command{newCommand("exit", []string{}, []string{})}, nil},
 		{`ls -l | cat file1.txt "file 2.txt"`,
 			[]Command{
 				newCommand("ls", []string{"l"}, []string{}),
 				newCommand("cat", []string{}, []string{"file1.txt", "file 2.txt"}),
 			},
-			""},
+			nil},
 		{`ls -l | cat file1.txt "file 2.txt" >"file 3.txt"`,
 			[]Command{
 				newCommand("ls", []string{"l"}, []string{}),
 				{"cat", []string{}, []string{"file1.txt", "file 2.txt"}, "", "file 3.txt", false},
 			},
-			""},
+			nil},
 		{`c1 "|" |c2 | c3`,
 			[]Command{
 				newCommand("c1", []string{}, []string{"|"}),
 				newCommand("c2", []string{}, []string{}),
 				newCommand("c3", []string{}, []string{}),
 			},
-			""},
+			nil},
 		{`c1 "|" |c2 & | c3`,
 			[]Command{
 				newCommand("c1", []string{}, []string{"|"}),
 				{"c2", []string{}, []string{}, "", "", true},
 				newCommand("c3", []string{}, []string{}),
 			},
-			""},
-		{"", nil, "empty command"},
-		{"pwd |   | ls -l ", nil, "empty command"},
+			nil},
+		{"", nil, ErrEmptyCommand},
+		{"pwd |   | ls -l ", nil, ErrEmptyCommand},
 	}
 
 	for _, test := range tests {

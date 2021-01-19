@@ -4,23 +4,21 @@ import (
 	"fmt"
 )
 
-// Pwd function is go implementation of pwd command
-func Pwd(arguments []string, options []string, input string, output string) (func() error, error) {
-	inputFile, outputFile, err := openInputOutputFiles(input, output)
+// Pwd is method of structure Execute command that executes go implementation of pwd command
+func (e *ExecuteCommand) Pwd() error {
+	inputFile, outputFile, err := e.openInputOutputFiles(e.Input, e.Output)
+	defer e.closeInputOutputFiles(e.Input, inputFile, e.Output, outputFile)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return func() error {
-		defer closeInputOutputFiles(input, inputFile, output, outputFile)
-		n, err := outputFile.WriteString(Path)
-		if err != nil {
-			return err
-		}
-		if n != len(Path) {
-			return fmt.Errorf("Wrote only %d characters of current path: %s", n, Path)
-		}
+	n, err := outputFile.WriteString(e.Path)
+	if err != nil {
+		return err
+	}
+	if n != len(e.Path) {
+		return fmt.Errorf("Wrote only %d characters of current path: %s", n, e.Path)
+	}
 
-		return nil
-	}, nil
+	return nil
 }

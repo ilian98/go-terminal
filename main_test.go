@@ -23,14 +23,15 @@ func testingExitCommand(t *testing.T, exitCommand string) {
 	defer func() { os.Stdin = stdin }()
 	os.Stdin = r
 
-	mainFinished := false
+	finishChannel := make(chan struct{}, 1)
 	go func() {
 		main()
-		mainFinished = true
+		finishChannel <- struct{}{}
 	}()
 
-	time.Sleep(100 * time.Millisecond)
-	if mainFinished == false {
+	select {
+	case <-finishChannel:
+	case <-time.After(100 * time.Millisecond):
 		t.Error("Exit command not working!")
 	}
 }

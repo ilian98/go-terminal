@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"reflect"
+	"strings"
 
 	"github.com/ilian98/go-terminal/commands"
 	"github.com/ilian98/go-terminal/parser"
@@ -11,17 +13,17 @@ import (
 
 func main() {
 	exitCommands := [...]string{"exit", "logout", "bye"}
+	shellCommands := [...]string{"pwd", "cd"}
 
 	path, err := os.Getwd()
 	if err != nil {
 		panic("Fatal error - cannot get current path!")
 	}
-	commands.Path = path
 
 	reader := bufio.NewReader(os.Stdin)
 	for {
 		fmt.Println("")
-		fmt.Println(commands.Path)
+		fmt.Println(path)
 		fmt.Print("$ ")
 		text, err := reader.ReadString('\n')
 		if err != nil {
@@ -45,34 +47,37 @@ func main() {
 				}
 			}
 
-			var commandFunc func() error
-			if parsedCommand[0].Name == "pwd" {
-				f, err := commands.Pwd(parsedCommand[0].Arguments, parsedCommand[0].Options, parsedCommand[0].Input, parsedCommand[0].Output)
-				if err != nil {
-					fmt.Printf("%v\n", err)
-					continue
+			flagCommand := false
+			for _, command := range shellCommands {
+				if parsedCommand[0].Name == command {
+					flagCommand = true
 				}
-				commandFunc = f
-			} else {
+			}
+			if flagCommand == false {
 				fmt.Println("No command with name: ", parsedCommand[0].Name)
 				continue
 			}
 
-			if parsedCommand[0].BgRun == true {
-				go func() {
-					err = commandFunc()
-					if err != nil {
-						fmt.Printf("%v\n", err)
-					}
-				}()
-			} else {
-				err = commandFunc()
-				if err != nil {
-					fmt.Printf("%v\n", err)
-					continue
+			command := commands.ExecuteCommand{
+				Path:      path,
+				Arguments: parsedCommand[0].Arguments,
+				Options:   parsedCommand[0].Options,
+				Input:     parsedCommand[0].Input,
+				Output:    parsedCommand[0].Output,
+			}
+			commandName := strings.Title(parsedCommand[0].Name)
+			runCommand := func() {
+				result := reflect.ValueOf(&command).MethodByName(commandName).Call([]reflect.Value{})
+				if r := result[0].Interface(); r != nil {
+					fmt.Printf("%v\n", r.(error))
 				}
 			}
-
+			if parsedCommand[0].BgRun == true {
+				go runCommand()
+			} else {
+				runCommand()
+				path = command.Path // path changed only when command is not run in bg mode
+			}
 		}
 	}
 }

@@ -17,6 +17,11 @@ type Command struct {
 	BgRun     bool
 }
 
+var (
+	// ErrEmptyCommand indicates that the parsed command when trimmed is empty
+	ErrEmptyCommand = errors.New("empty command")
+)
+
 // replaceEnclose replaces only those target characters with value that are enclosed in quotest
 func replaceEnclosed(text string, target byte, value byte) string {
 	byteText := []byte(text)
@@ -44,7 +49,7 @@ func parseCommandText(commandText string) (*Command, error) {
 	}
 
 	if len(words) == 1 && len(words[0]) == 0 {
-		return nil, errors.New("empty command")
+		return nil, ErrEmptyCommand
 	}
 	c.Name = words[0]
 	c.Options = make([]string, 0)

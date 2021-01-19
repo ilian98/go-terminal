@@ -15,21 +15,25 @@ func TestPwd(t *testing.T) {
 	defer func() { os.Stdout = stdout }()
 	os.Stdout = w
 
-	Path = "testPwd"
-	pwd, err := Pwd([]string{}, []string{}, "", "")
-	if err != nil {
+	testPath := "testPwd"
+	e := ExecuteCommand{testPath, []string{}, []string{}, "", ""}
+	if err := e.Pwd(); err != nil {
 		t.Error("Expecting no error from Pwd function\n")
 	}
-	if err := pwd(); err != nil {
-		t.Error("Expecting no error from pwd command\n")
-	}
 
-	output := make([]byte, len(Path))
+	output := make([]byte, len(testPath))
 
 	if _, err := r.Read(output); err != nil {
 		t.Fatal(err)
 	}
-	if string(output) != Path {
-		t.Errorf("Expecting %s, but got: %s", Path, string(output))
+	if string(output) != testPath {
+		t.Errorf("Expecting %s, but got: %s", testPath, string(output))
 	}
+}
+
+func ExampleExecuteCommand_Pwd() {
+	e := ExecuteCommand{"Example/Path", []string{}, []string{}, "", ""}
+	e.Pwd()
+	// Output:
+	// Example/Path
 }
