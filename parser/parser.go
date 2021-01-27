@@ -52,8 +52,6 @@ func parseCommandText(commandText string) (*Command, error) {
 		return nil, ErrEmptyCommand
 	}
 	c.Name = words[0]
-	c.Options = make([]string, 0)
-	c.Arguments = make([]string, 0)
 	c.BgRun = false
 	for _, word := range words[1:] {
 		word = strings.Trim(word, "\t")
@@ -100,7 +98,7 @@ func Parse(text string) ([]Command, error) {
 		text = strings.TrimRight(text, "\n")
 	}
 
-	parsedCommand := make([]Command, 0)
+	var parsedCommand []Command
 
 	text = replaceEnclosed(text, '|', 0) // replace '|' characters in probably arguments names with '\0' for save Split
 	commandsText := strings.Split(text, "|")

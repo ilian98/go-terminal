@@ -16,8 +16,8 @@ func TestPwd(t *testing.T) {
 	os.Stdout = w
 
 	testPath := "testPwd"
-	e := ExecuteCommand{testPath, []string{}, []string{}, "", ""}
-	if err := e.Pwd(); err != nil {
+	pwd := Pwd{}
+	if err := pwd.Execute(CommandProperties{testPath, []string{}, []string{}, "", ""}); err != nil {
 		t.Error("Expecting no error from Pwd function\n")
 	}
 
@@ -31,9 +31,9 @@ func TestPwd(t *testing.T) {
 	}
 }
 
-func ExampleExecuteCommand_Pwd() {
-	e := ExecuteCommand{"Example/Path", []string{}, []string{}, "", ""}
-	e.Pwd()
+func ExamplePwd_Execute() {
+	pwd := Pwd{}
+	pwd.Execute(CommandProperties{"Example/Path", []string{}, []string{}, "", ""})
 	// Output:
 	// Example/Path
 }

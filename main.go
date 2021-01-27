@@ -4,20 +4,29 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"reflect"
-	"strings"
 
 	"github.com/ilian98/go-terminal/commands"
 	"github.com/ilian98/go-terminal/parser"
 )
 
+func runCommand(command commands.ExecuteCommand, cp commands.CommandProperties) string {
+	if err := command.Execute(cp); err != nil {
+		fmt.Printf("%v\n", err)
+	}
+	return command.GetPath()
+}
+
 func main() {
 	exitCommands := [...]string{"exit", "logout", "bye"}
-	shellCommands := [...]string{"pwd", "cd"}
+	shellCommandsName := [...]string{"pwd", "cd"}
 
 	path, err := os.Getwd()
 	if err != nil {
 		panic("Fatal error - cannot get current path!")
+	}
+	if err != nil {
+		fmt.Printf("Fatal error: %v\n", err)
+		os.Exit(1)
 	}
 
 	reader := bufio.NewReader(os.Stdin)
@@ -48,35 +57,31 @@ func main() {
 			}
 
 			flagCommand := false
-			for _, command := range shellCommands {
+			var indCommand int
+			for i, command := range shellCommandsName {
 				if parsedCommand[0].Name == command {
 					flagCommand = true
+					indCommand = i
 				}
 			}
 			if flagCommand == false {
-				fmt.Println("No command with name: ", parsedCommand[0].Name)
+				fmt.Printf("No command with name: %s\n", parsedCommand[0].Name)
 				continue
 			}
 
-			command := commands.ExecuteCommand{
+			cp := commands.CommandProperties{
 				Path:      path,
 				Arguments: parsedCommand[0].Arguments,
 				Options:   parsedCommand[0].Options,
 				Input:     parsedCommand[0].Input,
 				Output:    parsedCommand[0].Output,
 			}
-			commandName := strings.Title(parsedCommand[0].Name)
-			runCommand := func() {
-				result := reflect.ValueOf(&command).MethodByName(commandName).Call([]reflect.Value{})
-				if r := result[0].Interface(); r != nil {
-					fmt.Printf("%v\n", r.(error))
-				}
-			}
+
+			shellCommandsExecute := [...]commands.ExecuteCommand{&commands.Pwd{}, &commands.Cd{}}
 			if parsedCommand[0].BgRun == true {
-				go runCommand()
+				go runCommand(shellCommandsExecute[indCommand], cp)
 			} else {
-				runCommand()
-				path = command.Path // path changed only when command is not run in bg mode
+				path = runCommand(shellCommandsExecute[indCommand], cp) // path changed only when command is not run in bg mode
 			}
 		}
 	}

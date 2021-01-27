@@ -8,8 +8,9 @@ import (
 	"testing"
 )
 
-func testingCd(t *testing.T, command ExecuteCommand, expectedResult string, expectedErr error) {
-	err := command.Cd()
+func testingCd(t *testing.T, cp CommandProperties, expectedResult string, expectedErr error) {
+	cd := Cd{}
+	err := cd.Execute(cp)
 	if err != nil {
 		if !errors.Is(err, expectedErr) {
 			t.Errorf("Expected %v, but got: %v\n", expectedErr, errors.Unwrap(err))
@@ -19,8 +20,8 @@ func testingCd(t *testing.T, command ExecuteCommand, expectedResult string, expe
 	if expectedErr != nil {
 		t.Errorf("Expected %v, but got no error\n", expectedErr)
 	}
-	if command.Path != expectedResult {
-		t.Errorf("Expected %s, but got: %s\n", expectedResult, command.Path)
+	if resultPath := cd.GetPath(); resultPath != expectedResult {
+		t.Errorf("Expected %s, but got: %s\n", expectedResult, resultPath)
 	}
 }
 func TestCd(t *testing.T) {
@@ -34,27 +35,27 @@ func TestCd(t *testing.T) {
 	}
 
 	var tests = []struct {
-		command ExecuteCommand
-		result  string
-		err     error
+		cp     CommandProperties
+		result string
+		err    error
 	}{
-		{ExecuteCommand{testPath, []string{"."}, []string{}, "", ""}, testPath, nil},
-		{ExecuteCommand{testPath, []string{".."}, []string{}, "", ""}, parentPath, nil},
-		{ExecuteCommand{testPath, []string{"..", "."}, []string{}, "", ""}, "", ErrTooManyArgs},
-		{ExecuteCommand{testPath, []string{"/not/existing/path"}, []string{}, "", ""}, "", ErrPathNotExist},
+		{CommandProperties{testPath, []string{"."}, []string{}, "", ""}, testPath, nil},
+		{CommandProperties{testPath, []string{".."}, []string{}, "", ""}, parentPath, nil},
+		{CommandProperties{testPath, []string{"..", "."}, []string{}, "", ""}, "", ErrTooManyArgs},
+		{CommandProperties{testPath, []string{"/not/existing/path"}, []string{}, "", ""}, "", ErrPathNotExist},
 	}
 
 	for _, test := range tests {
-		t.Run(fmt.Sprintf("Cd test with arguments %v ", test.command.Arguments), func(t *testing.T) {
-			testingCd(t, test.command, test.result, test.err)
+		t.Run(fmt.Sprintf("Cd test with arguments %v ", test.cp.Arguments), func(t *testing.T) {
+			testingCd(t, test.cp, test.result, test.err)
 		})
 	}
 }
 
-func ExampleExecuteCommand_Cd() {
-	e := ExecuteCommand{"", []string{`\`}, []string{}, "", ""}
-	e.Cd()
-	if e.Path == getRootPath(e.Path) {
+func ExampleCd_Execute() {
+	cd := Cd{}
+	cd.Execute(CommandProperties{"", []string{`\`}, []string{}, "", ""})
+	if cd.GetPath() == cd.getRootPath() {
 		fmt.Printf("Terminal at root path!")
 	}
 	// Output:

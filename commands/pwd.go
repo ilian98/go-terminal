@@ -4,20 +4,36 @@ import (
 	"fmt"
 )
 
-// Pwd is method of structure Execute command that executes go implementation of pwd command
-func (e *ExecuteCommand) Pwd() error {
-	inputFile, outputFile, err := e.openInputOutputFiles(e.Input, e.Output)
-	defer e.closeInputOutputFiles(e.Input, inputFile, e.Output, outputFile)
+// Pwd is a structure for pwd command, implementing ExecuteCommand interface
+type Pwd struct {
+	path string
+}
+
+// GetName is a getter for command name
+func (p *Pwd) GetName() string {
+	return "pwd"
+}
+
+// GetPath is a getter for path
+func (p *Pwd) GetPath() string {
+	return p.path
+}
+
+// Execute is go implementation of pwd command
+func (p *Pwd) Execute(cp CommandProperties) error {
+	p.path = cp.Path
+	inputFile, outputFile, err := cp.openInputOutputFiles()
+	defer cp.closeInputOutputFiles(inputFile, outputFile)
 	if err != nil {
 		return err
 	}
 
-	n, err := outputFile.WriteString(e.Path)
+	n, err := outputFile.WriteString(p.path)
 	if err != nil {
 		return err
 	}
-	if n != len(e.Path) {
-		return fmt.Errorf("Wrote only %d characters of current path: %s", n, e.Path)
+	if n != len(p.path) {
+		return fmt.Errorf("Wrote only %d characters of current path: %s", n, p.path)
 	}
 
 	return nil
