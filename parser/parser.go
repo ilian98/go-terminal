@@ -63,18 +63,18 @@ func parseCommandText(commandText string) (*Command, error) {
 			continue
 		}
 
-		if word[0] == '-' {
+		if len(word) > 1 && word[0] == '-' {
 			c.Options = append(c.Options, word[1:])
 		} else if word[0] == '<' {
 			// Last argument with '<' will be considered for input, others will be ignored
-			if word[1] == '"' && word[len(word)-1] == '"' {
+			if len(word) > 1 && word[1] == '"' && word[len(word)-1] == '"' {
 				c.Input = word[2 : len(word)-1]
 			} else {
 				c.Input = word[1:]
 			}
 		} else if word[0] == '>' {
 			// Last argument starting with '>' will be considered for output, others will be ignored
-			if word[1] == '"' && word[len(word)-1] == '"' {
+			if len(word) > 1 && word[1] == '"' && word[len(word)-1] == '"' {
 				c.Output = word[2 : len(word)-1]
 			} else {
 				c.Output = word[1:]

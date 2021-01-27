@@ -38,3 +38,8 @@ func (p *Pwd) Execute(cp CommandProperties) error {
 
 	return nil
 }
+
+func (p *Pwd) Clone() ExecuteCommand {
+	clone := *p
+	return &clone
+}

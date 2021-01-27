@@ -19,6 +19,7 @@ type ExecuteCommand interface {
 	GetName() string
 	GetPath() string
 	Execute(cp CommandProperties) error
+	Clone() ExecuteCommand
 }
 
 func (cp *CommandProperties) pathFile(fileName string) string {
@@ -32,7 +33,7 @@ func (cp *CommandProperties) openInputFile(fileName string) (*os.File, error) {
 	file, err := os.Open(cp.pathFile(fileName))
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, fmt.Errorf("File for storing the input with name %s does not exist", fileName)
+			return nil, fmt.Errorf("File for reading the input with name %s does not exist", fileName)
 		}
 		return nil, err
 	}

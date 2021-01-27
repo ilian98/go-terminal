@@ -134,6 +134,9 @@ func TestParseCommandText(t *testing.T) {
 
 		{"ls -l >output.txt &", Command{"ls", []string{"l"}, []string{}, "", "output.txt", true}},
 		{"ls -l & >output.txt", Command{"ls", []string{"l"}, []string{}, "", "output.txt", true}},
+
+		{"pwd - < >", Command{"pwd", []string{}, []string{"-"}, "", "", false}},
+		{`pwd - "<" ">"`, Command{"pwd", []string{}, []string{"-", "<", ">"}, "", "", false}},
 	}
 
 	for _, test := range tests {

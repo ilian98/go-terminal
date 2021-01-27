@@ -18,7 +18,7 @@ var (
 	ErrPathNotExist = errors.New("path does not exist")
 )
 
-// Cd is a structure for pwd command, implementing ExecuteCommand interface
+// Cd is a structure for cd command, implementing ExecuteCommand interface
 type Cd struct {
 	path string
 }
@@ -86,6 +86,10 @@ func (c *Cd) Execute(cp CommandProperties) error {
 		return fmt.Errorf("%s - %w", tryPath, ErrPathNotExist)
 	}
 	return err
+}
+func (c *Cd) Clone() ExecuteCommand {
+	clone := *c
+	return &clone
 }
 
 func (c *Cd) getRootPath() string {
