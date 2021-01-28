@@ -3,6 +3,7 @@ package interpreter
 import (
 	"errors"
 	"fmt"
+	"os"
 
 	"github.com/ilian98/go-terminal/commands"
 	"github.com/ilian98/go-terminal/parser"
@@ -71,17 +72,32 @@ func (i *Interpreter) ExecuteCommand(parsedCommand parser.Command) int {
 		Output:    parsedCommand.Output,
 	}
 
+	removeFileName := ""
+	if parsedCommand.BgRun == true && cp.Input == "" {
+		// we make sure that command ran in bg mode won't try to read from stdin
+		removeFileName = cp.Path + string(os.PathSeparator) + "dummy-file-mock-stdin-bg-run"
+		dummy, _ := os.Create(removeFileName)
+		dummy.Close()
+
+		cp.Input = "dummy-file-mock-stdin-bg-run"
+	}
+
 	command := i.shellCommands[ind].Clone()
-	runCommand := func() {
+	runCommand := func(removeFileName string) {
 		if err := command.Execute(cp); err != nil {
 			fmt.Printf("%v\n", err)
+		}
+		if removeFileName != "" {
+			if err := os.Remove(removeFileName); err != nil {
+				fmt.Printf("%v\n", err)
+			}
 		}
 	}
 
 	if parsedCommand.BgRun == true {
-		go runCommand()
+		go runCommand(removeFileName)
 	} else {
-		runCommand()
+		runCommand("")
 		i.Path = command.GetPath() // path changed only when command is not run in bg mode
 	}
 

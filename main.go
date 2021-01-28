@@ -18,7 +18,9 @@ func init() {
 		I.RegisterExitCommand(exitCommand)
 	}
 
-	commands := [...]commands.ExecuteCommand{&commands.Pwd{}, &commands.Cd{}, &commands.Ls{}}
+	commands := [...]commands.ExecuteCommand{
+		&commands.Pwd{}, &commands.Cd{}, &commands.Ls{}, &commands.Cat{},
+	}
 	for _, command := range commands {
 		I.RegisterCommand(command)
 	}

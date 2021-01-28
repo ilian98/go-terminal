@@ -82,7 +82,7 @@ func parseCommandText(commandText string) (*Command, error) {
 				// This means file name is next argument
 				c.Input = removeQuotes(words[(1+ind)+1])
 				words[(1+ind)+1] = "" // This way we will skip it in next iteration
-			} else {
+			} else if len(word) > 1 {
 				c.Input = removeQuotes(word[1:])
 			}
 		} else if c.Output == "" && word[0] == '>' {
@@ -91,7 +91,7 @@ func parseCommandText(commandText string) (*Command, error) {
 				// This means file name is next argument
 				c.Output = removeQuotes(words[(1+ind)+1])
 				words[(1+ind)+1] = "" // This way we will skip it in next iteration
-			} else {
+			} else if len(word) > 1 {
 				c.Output = removeQuotes(word[1:])
 			}
 		} else {
