@@ -42,8 +42,8 @@ func TestCd(t *testing.T) {
 	}{
 		{CommandProperties{testPath, []string{"."}, []string{}, "", ""}, testPath, nil},
 		{CommandProperties{testPath, []string{".."}, []string{}, "", ""}, parentPath, nil},
-		{CommandProperties{testPath, []string{"..", "."}, []string{}, "", ""}, "", ErrTooManyArgs},
-		{CommandProperties{testPath, []string{"/not/existing/path"}, []string{}, "", ""}, "", ErrPathNotExist},
+		{CommandProperties{testPath, []string{"..", "."}, []string{}, "", ""}, "", ErrCdTooManyArgs},
+		{CommandProperties{testPath, []string{"/not/existing/path"}, []string{}, "", ""}, "", ErrCdPathNotExist},
 	}
 
 	for _, test := range tests {

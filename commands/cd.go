@@ -10,12 +10,12 @@ import (
 )
 
 var (
-	// ErrTooManyArgs indicates that the cd command has more than 1 argument
-	ErrTooManyArgs = errors.New("Too many arguments")
-	// ErrPathLeadsToFile indicates that the path in cd command is to file
-	ErrPathLeadsToFile = errors.New("path leads to file, not directory")
-	// ErrPathNotExist indicates that the path in cd command does not exist
-	ErrPathNotExist = errors.New("path does not exist")
+	// ErrCdTooManyArgs indicates that the cd command has more than 1 argument
+	ErrCdTooManyArgs = errors.New("Too many arguments")
+	// ErrCdPathLeadsToFile indicates that the path in cd command is to file
+	ErrCdPathLeadsToFile = errors.New("path leads to file, not directory")
+	// ErrCdPathNotExist indicates that the path in cd command does not exist
+	ErrCdPathNotExist = errors.New("path does not exist")
 )
 
 // Cd is a structure for cd command, implementing ExecuteCommand interface
@@ -54,7 +54,7 @@ func (c *Cd) Execute(cp CommandProperties) error {
 		return nil
 	}
 	if len(cp.Arguments) > 1 {
-		return ErrTooManyArgs
+		return ErrCdTooManyArgs
 	}
 
 	path := cp.Arguments[0]
@@ -87,9 +87,9 @@ func (c *Cd) Execute(cp CommandProperties) error {
 		c.path = p
 		return nil
 	} else if err == nil {
-		return fmt.Errorf("%s - %w", tryPath, ErrPathLeadsToFile)
+		return fmt.Errorf("%s - %w", tryPath, ErrCdPathLeadsToFile)
 	} else if os.IsNotExist(err) {
-		return fmt.Errorf("%s - %w", tryPath, ErrPathNotExist)
+		return fmt.Errorf("%s - %w", tryPath, ErrCdPathNotExist)
 	}
 	return err
 }

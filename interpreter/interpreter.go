@@ -3,7 +3,10 @@ package interpreter
 import (
 	"errors"
 	"fmt"
+	"math/rand"
 	"os"
+	"strconv"
+	"time"
 
 	"github.com/ilian98/go-terminal/commands"
 	"github.com/ilian98/go-terminal/parser"
@@ -75,11 +78,13 @@ func (i *Interpreter) ExecuteCommand(parsedCommand parser.Command) int {
 	removeFileName := ""
 	if parsedCommand.BgRun == true && cp.Input == "" {
 		// we make sure that command ran in bg mode won't try to read from stdin
-		removeFileName = cp.Path + string(os.PathSeparator) + "dummy-file-mock-stdin-bg-run"
+		r := rand.New(rand.NewSource(time.Now().UnixNano()))
+		randomNumber := strconv.Itoa(r.Int())
+		removeFileName = cp.Path + string(os.PathSeparator) + "dummy-file-mock-stdin-bg-run" + randomNumber
 		dummy, _ := os.Create(removeFileName)
 		dummy.Close()
 
-		cp.Input = "dummy-file-mock-stdin-bg-run"
+		cp.Input = "dummy-file-mock-stdin-bg-run" + randomNumber
 	}
 
 	command := i.shellCommands[ind].Clone()

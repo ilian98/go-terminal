@@ -37,7 +37,7 @@ func TestLs(t *testing.T) {
 
 	ls := Ls{}
 	if err := ls.Execute(CommandProperties{path, []string{}, []string{"l"}, "", ""}); err != nil {
-		t.Error("Expecting no error from Ls function\n")
+		t.Errorf("Expecting no error from Ls function, but got: %w\n", err)
 		return
 	}
 

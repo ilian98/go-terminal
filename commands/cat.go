@@ -10,8 +10,8 @@ import (
 )
 
 var (
-	// ErrFileNotExist indicates that one of the arguments is invalid file name
-	ErrFileNotExist = errors.New("file does not exist")
+	// ErrCatFileNotExist indicates that one of the arguments is invalid file name
+	ErrCatFileNotExist = errors.New("file does not exist")
 )
 
 // Cat is a structure for cat command, implementing ExecuteCommand interface
@@ -68,7 +68,7 @@ func (c *Cat) Execute(cp CommandProperties) error {
 			return err
 		}
 
-		// clean newline after EOF is the reading was from stdin
+		// clean newline after EOF if the reading was from stdin
 		var bufferNewLine []byte
 		if runtime.GOOS == "windows" {
 			bufferNewLine = make([]byte, 2)
@@ -85,10 +85,13 @@ func (c *Cat) Execute(cp CommandProperties) error {
 	for _, argument := range cp.Arguments {
 		file, err := cp.openInputFile(argument)
 		if err != nil {
-			errStrings = append(errStrings, fmt.Errorf("%s - %w", argument, ErrFileNotExist).Error())
+			errStrings = append(errStrings, fmt.Errorf("%s - %w", argument, ErrCatFileNotExist).Error())
 		} else {
-			outputFileData(file)
+			err := outputFileData(file)
 			file.Close()
+			if err != nil {
+				errStrings = append(errStrings, fmt.Errorf("%s - %w", argument, err).Error())
+			}
 		}
 	}
 
