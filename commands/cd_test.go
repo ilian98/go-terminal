@@ -13,12 +13,13 @@ func testingCd(t *testing.T, cp CommandProperties, expectedResult string, expect
 	err := cd.Execute(cp)
 	if err != nil {
 		if !errors.Is(err, expectedErr) {
-			t.Errorf("Expected %v, but got: %v\n", expectedErr, errors.Unwrap(err))
+			t.Errorf("Expected %v, but got: %w\n", expectedErr, err)
 		}
 		return
 	}
 	if expectedErr != nil {
 		t.Errorf("Expected %v, but got no error\n", expectedErr)
+		return
 	}
 	if resultPath := cd.GetPath(); resultPath != expectedResult {
 		t.Errorf("Expected %s, but got: %s\n", expectedResult, resultPath)
@@ -27,11 +28,11 @@ func testingCd(t *testing.T, cp CommandProperties, expectedResult string, expect
 func TestCd(t *testing.T) {
 	testPath, err := os.Getwd()
 	if err != nil {
-		t.Fatal("Fatal error - cannot get current path!")
+		t.Fatal("Fatal error - cannot get current path! - %w", err)
 	}
 	parentPath, err2 := filepath.Abs(testPath + `\..`)
 	if err2 != nil {
-		t.Fatal("Fatal error - cannot get parent path!")
+		t.Fatal("Fatal error - cannot get parent path! - %w", err)
 	}
 
 	var tests = []struct {

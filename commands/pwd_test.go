@@ -8,7 +8,7 @@ import (
 func TestPwd(t *testing.T) {
 	r, w, err := os.Pipe()
 	if err != nil {
-		t.Fatal(err)
+		t.Fatal("Fatal error - cannot make pipe! - %w", err)
 	}
 
 	stdout := os.Stdout
@@ -24,7 +24,7 @@ func TestPwd(t *testing.T) {
 	output := make([]byte, len(testPath))
 
 	if _, err := r.Read(output); err != nil {
-		t.Fatal(err)
+		t.Fatal("Fatal error - cannot read from pipe! - %w", err)
 	}
 	if string(output) != testPath {
 		t.Errorf("Expecting %s, but got: %s", testPath, string(output))

@@ -17,7 +17,7 @@ type Interpreter struct {
 }
 
 var (
-	// ErrCommandExists indicates that command is already in slice and won't be added
+	// ErrCommandExists indicates that command is already registered and won't be added
 	ErrCommandExists = errors.New("command with that name already exists")
 )
 
@@ -30,7 +30,7 @@ func (i *Interpreter) RegisterExitCommand(name string) error {
 	return nil
 }
 
-// RegisterCommand is a method of Interpreter that can be used to add new command implement commands.ExecuteCommand interface in shellCommands
+// RegisterCommand is a method of Interpreter that can be used to add new command implementing commands.ExecuteCommand interface in shellCommands
 func (i *Interpreter) RegisterCommand(c commands.ExecuteCommand) error {
 	name := c.GetName()
 	if res, _ := i.checkForCommand(i.shellCommandsName, name); res == true {
@@ -47,11 +47,11 @@ const (
 	Ok = iota
 	// ExitCommand indicates that the command is for exiting the terminal
 	ExitCommand
-	// InvalidCommandName means that the command parsed name is not present in shellCommandName
+	// InvalidCommandName indicates that the command's parsed name is not present in shellCommandsName
 	InvalidCommandName
 )
 
-// ExecuteCommand is a method of Interpreter that executed command given command information after parsing
+// ExecuteCommand is a method of Interpreter that executes command given command information after parsing
 func (i *Interpreter) ExecuteCommand(parsedCommand parser.Command) int {
 	// check if command is for exiting the terminal
 	if result, _ := i.checkForCommand(i.exitCommands, parsedCommand.Name); result == true {

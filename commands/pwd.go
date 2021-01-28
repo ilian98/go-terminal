@@ -19,6 +19,12 @@ func (p *Pwd) GetPath() string {
 	return p.path
 }
 
+// Clone is a method for cloning pwd command
+func (p *Pwd) Clone() ExecuteCommand {
+	clone := *p
+	return &clone
+}
+
 // Execute is go implementation of pwd command
 func (p *Pwd) Execute(cp CommandProperties) error {
 	p.path = cp.Path
@@ -37,9 +43,4 @@ func (p *Pwd) Execute(cp CommandProperties) error {
 	}
 
 	return nil
-}
-
-func (p *Pwd) Clone() ExecuteCommand {
-	clone := *p
-	return &clone
 }

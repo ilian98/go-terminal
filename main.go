@@ -10,13 +10,16 @@ import (
 	"github.com/ilian98/go-terminal/parser"
 )
 
+// I is the interpreter which is used by main to operate with the parsed commands
 var I interpreter.Interpreter
 
 func init() {
 	for _, exitCommand := range []string{"exit", "logout", "bye"} {
 		I.RegisterExitCommand(exitCommand)
 	}
-	for _, command := range []commands.ExecuteCommand{&commands.Pwd{}, &commands.Cd{}} {
+
+	commands := [...]commands.ExecuteCommand{&commands.Pwd{}, &commands.Cd{}, &commands.Ls{}}
+	for _, command := range commands {
 		I.RegisterCommand(command)
 	}
 }

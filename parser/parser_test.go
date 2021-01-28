@@ -104,13 +104,15 @@ func newCommand(Name string, Options []string, Arguments []string) Command {
 func testingParseCommandText(t *testing.T, commandText string, expectedResult *Command) {
 	result, err := parseCommandText(commandText)
 	if err != nil {
-		t.Errorf("Expected no error, but got: %v\n", err)
+		t.Errorf("Expected no error, but got: %w\n", err)
+		return
 	}
 	if result.notEqual(expectedResult) {
 		t.Errorf("Expected\n")
 		t.Error(commandToString(expectedResult))
 		t.Errorf("but got\n")
 		t.Error(commandToString(result))
+		return
 	}
 }
 func TestParseCommandText(t *testing.T) {
@@ -157,10 +159,12 @@ func testingParse(t *testing.T, text string, expectedResult []Command, expectedE
 	result, err := Parse(text)
 	if err != nil {
 		if !errors.Is(err, expectedErr) {
-			t.Errorf("Expected %v, but got: %v.\n", expectedErr, errors.Unwrap(err))
+			t.Errorf("Expected %v, but got: %w.\n", expectedErr, err)
+			return
 		}
 		if result != nil {
 			t.Errorf("Expected result from parsing to be nil\n")
+			return
 		}
 		return
 	}
@@ -170,6 +174,7 @@ func testingParse(t *testing.T, text string, expectedResult []Command, expectedE
 			t.Error(commandsToString(expectedResult))
 			t.Errorf("but got\n")
 			t.Error(commandsToString(result))
+			return
 		}
 	}
 }

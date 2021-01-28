@@ -33,6 +33,12 @@ func (c *Cd) GetPath() string {
 	return c.path
 }
 
+// Clone is a method for cloning cd command
+func (c *Cd) Clone() ExecuteCommand {
+	clone := *c
+	return &clone
+}
+
 // Execute is go implementation of cd command
 func (c *Cd) Execute(cp CommandProperties) error {
 	c.path = cp.Path
@@ -86,10 +92,6 @@ func (c *Cd) Execute(cp CommandProperties) error {
 		return fmt.Errorf("%s - %w", tryPath, ErrPathNotExist)
 	}
 	return err
-}
-func (c *Cd) Clone() ExecuteCommand {
-	clone := *c
-	return &clone
 }
 
 func (c *Cd) getRootPath() string {
