@@ -123,6 +123,7 @@ func TestParseCommandText(t *testing.T) {
 		{"exit", newCommand("exit", []string{}, []string{})},
 
 		{"ls -l", newCommand("ls", []string{"l"}, []string{})},
+		{"ls 	 -l", newCommand("ls", []string{"l"}, []string{})},
 		{"ls -l arg1", newCommand("ls", []string{"l"}, []string{"arg1"})},
 		{`ls -l arg1 -a "ab c|d"`, newCommand("ls", []string{"l", "a"}, []string{"arg1", "ab c|d"})},
 		{`ls -l arg1 "-arg2"`, newCommand("ls", []string{"l"}, []string{"arg1", "-arg2"})},
@@ -132,13 +133,16 @@ func TestParseCommandText(t *testing.T) {
 		{"cat <file.txt", Command{"cat", []string{}, []string{}, "file.txt", "", false}},
 		{`cat <"file 1.txt"`, Command{"cat", []string{}, []string{}, "file 1.txt", "", false}},
 		{`cat >"file 2.txt"`, Command{"cat", []string{}, []string{}, "", "file 2.txt", false}},
-		{"cat <file1.txt <file2.txt >file3.txt >file4.txt", Command{"cat", []string{}, []string{}, "file2.txt", "file4.txt", false}},
+		{"cat <file1.txt <file2.txt >file3.txt >file4.txt", Command{"cat", []string{}, []string{"<file2.txt", ">file4.txt"}, "file1.txt", "file3.txt", false}},
 
 		{"ls -l >output.txt &", Command{"ls", []string{"l"}, []string{}, "", "output.txt", true}},
 		{"ls -l & >output.txt", Command{"ls", []string{"l"}, []string{}, "", "output.txt", true}},
 
-		{"pwd - < >", Command{"pwd", []string{}, []string{"-"}, "", "", false}},
+		{"pwd - < >", Command{"pwd", []string{}, []string{"-"}, ">", "", false}},
 		{`pwd - "<" ">"`, Command{"pwd", []string{}, []string{"-", "<", ">"}, "", "", false}},
+
+		{"ls < in.txt > out.txt < in2.txt > out2.txt", Command{"ls", []string{}, []string{"<", "in2.txt", ">", "out2.txt"}, "in.txt", "out.txt", false}},
+		{"ls < in.txt >", Command{"ls", []string{}, []string{}, "in.txt", "", false}},
 	}
 
 	for _, test := range tests {

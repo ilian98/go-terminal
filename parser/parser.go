@@ -38,8 +38,11 @@ func replaceEnclosed(text string, target byte, value byte) string {
 }
 
 func parseCommandText(commandText string) (*Command, error) {
-	commandText = strings.Trim(commandText, " \t")
-	var c Command
+	commandText = strings.TrimSpace(commandText)
+
+	commandText = replaceEnclosed(commandText, '\t', 0) // replace '\t' characters in probably arguments names with '\0' for save remove
+	commandText = strings.Replace(commandText, "\t", " ", -1)
+	commandText = replaceEnclosed(commandText, 0, '\t')
 
 	commandText = replaceEnclosed(commandText, ' ', 0) // replace ' ' characters in probably arguments names with '\0' for save Split
 	words := strings.Split(commandText, " ")
@@ -51,10 +54,18 @@ func parseCommandText(commandText string) (*Command, error) {
 	if len(words) == 1 && len(words[0]) == 0 {
 		return nil, ErrEmptyCommand
 	}
+
+	var c Command
 	c.Name = words[0]
 	c.BgRun = false
-	for _, word := range words[1:] {
-		word = strings.Trim(word, "\t")
+
+	removeQuotes := func(word string) string {
+		if len(word) > 2 && word[0] == '"' && word[len(word)-1] == '"' {
+			return word[1 : len(word)-1]
+		}
+		return word
+	}
+	for ind, word := range words[1:] {
 		if len(word) == 0 {
 			continue
 		}
@@ -65,26 +76,26 @@ func parseCommandText(commandText string) (*Command, error) {
 
 		if len(word) > 1 && word[0] == '-' {
 			c.Options = append(c.Options, word[1:])
-		} else if word[0] == '<' {
-			// Last argument with '<' will be considered for input, others will be ignored
-			if len(word) > 1 && word[1] == '"' && word[len(word)-1] == '"' {
-				c.Input = word[2 : len(word)-1]
+		} else if c.Input == "" && word[0] == '<' {
+			// First argument with '<' will be considered for input, others will be counted as arguments
+			if len(word) == 1 && (1+ind)+1 < len(words) {
+				// This means file name is next argument
+				c.Input = removeQuotes(words[(1+ind)+1])
+				words[(1+ind)+1] = "" // This way we will skip it in next iteration
 			} else {
-				c.Input = word[1:]
+				c.Input = removeQuotes(word[1:])
 			}
-		} else if word[0] == '>' {
-			// Last argument starting with '>' will be considered for output, others will be ignored
-			if len(word) > 1 && word[1] == '"' && word[len(word)-1] == '"' {
-				c.Output = word[2 : len(word)-1]
+		} else if c.Output == "" && word[0] == '>' {
+			// First argument with '>' will be considered for output, others will be counted as arguments
+			if len(word) == 1 && (1+ind)+1 < len(words) {
+				// This means file name is next argument
+				c.Output = removeQuotes(words[(1+ind)+1])
+				words[(1+ind)+1] = "" // This way we will skip it in next iteration
 			} else {
-				c.Output = word[1:]
+				c.Output = removeQuotes(word[1:])
 			}
 		} else {
-			if len(word) > 2 && word[0] == '"' && word[len(word)-1] == '"' {
-				c.Arguments = append(c.Arguments, word[1:len(word)-1])
-			} else {
-				c.Arguments = append(c.Arguments, word)
-			}
+			c.Arguments = append(c.Arguments, removeQuotes(word))
 		}
 	}
 	return &c, nil
