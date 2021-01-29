@@ -14,12 +14,8 @@ func testingPing(t *testing.T, arguments []string, expectedResult string, expect
 		t.Fatal("Fatal error - cannot make pipe! - %w", err)
 	}
 
-	stdout := os.Stdout
-	defer func() { os.Stdout = stdout }()
-	os.Stdout = w
-
 	ping := Ping{}
-	errPing := ping.Execute(CommandProperties{"", arguments, []string{""}, "", ""})
+	errPing := ping.Execute(CommandProperties{"", arguments, []string{""}, os.Stdin, w})
 
 	takeResult := func() string {
 		output := make([]byte, 1<<10)

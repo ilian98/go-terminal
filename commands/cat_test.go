@@ -6,27 +6,21 @@ import (
 	"testing"
 )
 
-func testingCat(t *testing.T, input string, inputText string, arguments []string, expectedResult string, expectedErr string) {
+func testingCat(t *testing.T, inputText string, arguments []string, expectedResult string, expectedErr string) {
 	inputR, inputW, err := os.Pipe()
 	if err != nil {
 		t.Fatal("Fatal error - cannot make pipe! - %w", err)
 	}
-	stdin := os.Stdin
-	defer func() { os.Stdin = stdin }()
-	os.Stdin = inputR
 
 	outputR, outputW, err := os.Pipe()
 	if err != nil {
 		t.Fatal("Fatal error - cannot make pipe! - %w", err)
 	}
-	stdout := os.Stdout
-	defer func() { os.Stdout = stdout }()
-	os.Stdout = outputW
 
 	inputW.WriteString(inputText)
 	inputW.Close()
 	cat := Cat{}
-	if err := cat.Execute(CommandProperties{"test/path", arguments, []string{}, input, ""}); err != nil {
+	if err := cat.Execute(CommandProperties{"test/path", arguments, []string{}, inputR, outputW}); err != nil {
 		if expectedErr == "" {
 			t.Errorf("Expected no error, but got: %v", err)
 		} else if err.Error() != expectedErr {
@@ -49,20 +43,19 @@ func testingCat(t *testing.T, input string, inputText string, arguments []string
 }
 func TestCat(t *testing.T) {
 	var tests = []struct {
-		input     string
 		inputText string
 		arguments []string
 		result    string
 		err       string
 	}{
-		{"", "first test", []string{}, "first test", ""},
-		{"", "second test", []string{"no-file"}, "", "no-file - file does not exist"},
-		{"", "third test", []string{"no-file1", "no-file2"}, "", "no-file1 - file does not exist\nno-file2 - file does not exist"},
+		{"first test", []string{}, "first test", ""},
+		{"second test", []string{"no-file"}, "", "no-file - file does not exist"},
+		{"third test", []string{"no-file1", "no-file2"}, "", "no-file1 - file does not exist\nno-file2 - file does not exist"},
 	}
 
 	for _, test := range tests {
-		t.Run(fmt.Sprintf("Cat test with input %s, inputText %s and arguments %v ", test.input, test.inputText, test.arguments), func(t *testing.T) {
-			testingCat(t, test.input, test.inputText, test.arguments, test.result, test.err)
+		t.Run(fmt.Sprintf("Cat test with inputText %s and arguments %v ", test.inputText, test.arguments), func(t *testing.T) {
+			testingCat(t, test.inputText, test.arguments, test.result, test.err)
 		})
 	}
 }
@@ -77,7 +70,7 @@ func ExampleCat_Execute() {
 	file.Close()
 
 	cat := Cat{}
-	cat.Execute(CommandProperties{path, []string{"example-file"}, []string{}, "", ""})
+	cat.Execute(CommandProperties{path, []string{"example-file"}, []string{}, os.Stdin, os.Stdout})
 	// Output:
 	// cat command example
 }

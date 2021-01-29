@@ -3,10 +3,7 @@ package interpreter
 import (
 	"errors"
 	"fmt"
-	"math/rand"
 	"os"
-	"strconv"
-	"time"
 
 	"github.com/ilian98/go-terminal/commands"
 	"github.com/ilian98/go-terminal/parser"
@@ -55,8 +52,8 @@ const (
 	InvalidCommandName
 )
 
-// ExecuteCommand is a method of Interpreter that executes command given command information after parsing
-func (i *Interpreter) ExecuteCommand(parsedCommand parser.Command) int {
+// ExecuteCommand is a method of Interpreter that executes command given command information after parsing and input and output files which could be stdin and stdout
+func (i *Interpreter) ExecuteCommand(parsedCommand parser.Command, inputFile *os.File, outputFile *os.File) int {
 	// check if command is for exiting the terminal
 	if result, _ := i.checkForCommand(i.exitCommands, parsedCommand.Name); result == true {
 		return ExitCommand
@@ -68,45 +65,52 @@ func (i *Interpreter) ExecuteCommand(parsedCommand parser.Command) int {
 	}
 
 	cp := commands.CommandProperties{
-		Path:      i.Path,
-		Arguments: parsedCommand.Arguments,
-		Options:   parsedCommand.Options,
-		Input:     parsedCommand.Input,
-		Output:    parsedCommand.Output,
-	}
-
-	removeFileName := ""
-	if parsedCommand.BgRun == true && cp.Input == "" {
-		// we make sure that command ran in bg mode won't try to read from stdin
-		r := rand.New(rand.NewSource(time.Now().UnixNano()))
-		randomNumber := strconv.Itoa(r.Int())
-		removeFileName = cp.Path + string(os.PathSeparator) + "dummy-file-mock-stdin-bg-run" + randomNumber
-		dummy, _ := os.Create(removeFileName)
-		dummy.Close()
-
-		cp.Input = "dummy-file-mock-stdin-bg-run" + randomNumber
+		Path:       i.Path,
+		Arguments:  parsedCommand.Arguments,
+		Options:    parsedCommand.Options,
+		InputFile:  inputFile,
+		OutputFile: outputFile,
 	}
 
 	command := i.shellCommands[ind].Clone()
-	runCommand := func(removeFileName string) {
+	runCommand := func() {
 		if err := command.Execute(cp); err != nil {
 			fmt.Printf("%v\n", err)
-		}
-		if removeFileName != "" {
-			if err := os.Remove(removeFileName); err != nil {
-				fmt.Printf("%v\n", err)
-			}
 		}
 	}
 
 	if parsedCommand.BgRun == true {
-		go runCommand(removeFileName)
+		go runCommand()
 	} else {
-		runCommand("")
+		runCommand()
 		i.Path = command.GetPath() // path changed only when command is not run in bg mode
 	}
 
 	return Ok
+}
+
+// InterpretCommand is a method of Interpreter that interpretes parsed command and executes command
+func (i *Interpreter) InterpretCommand(parsedCommand []parser.Command) int {
+	if len(parsedCommand) == 1 {
+		inputFile, outputFile, err := i.openInputOutputFiles(parsedCommand[0].Input, parsedCommand[0].Output)
+		if parsedCommand[0].BgRun == true && inputFile == os.Stdin {
+			// we make sure that command ran in bg mode won't try to read from stdin
+			r, w, err := os.Pipe()
+			if err != nil {
+				fmt.Printf("%v\n", err)
+			} else {
+				inputFile = r
+			}
+			w.Close()
+		}
+
+		if err != nil {
+			fmt.Printf("%v\n", err)
+			return 0
+		}
+		return i.ExecuteCommand(parsedCommand[0], inputFile, outputFile)
+	}
+	return 0
 }
 
 func (i *Interpreter) checkForCommand(names []string, target string) (bool, int) {
@@ -116,4 +120,47 @@ func (i *Interpreter) checkForCommand(names []string, target string) (bool, int)
 		}
 	}
 	return false, -1
+}
+
+func (i *Interpreter) pathFile(fileName string) string {
+	return i.Path + string(os.PathSeparator) + fileName
+}
+
+func (i *Interpreter) openInputFile(fileName string) (*os.File, error) {
+	if fileName == "" {
+		return os.Stdin, nil
+	}
+	file, err := os.Open(i.pathFile(fileName))
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, fmt.Errorf("File for reading the input with name %s does not exist", fileName)
+		}
+		return nil, err
+	}
+	return file, nil
+}
+
+func (i *Interpreter) openOutputFile(fileName string) (*os.File, error) {
+	if fileName == "" {
+		return os.Stdout, nil
+	}
+	file, err := os.OpenFile(i.pathFile(fileName), os.O_CREATE|os.O_WRONLY, 0666)
+	if err != nil {
+		return nil, err
+	}
+	return file, nil
+}
+
+func (i *Interpreter) openInputOutputFiles(input string, output string) (*os.File, *os.File, error) {
+	inputFile, err := i.openInputFile(input)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	outputFile, err := i.openOutputFile(output)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return inputFile, outputFile, nil
 }

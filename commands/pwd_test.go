@@ -11,13 +11,9 @@ func TestPwd(t *testing.T) {
 		t.Fatal("Fatal error - cannot make pipe! - %w", err)
 	}
 
-	stdout := os.Stdout
-	defer func() { os.Stdout = stdout }()
-	os.Stdout = w
-
 	testPath := "testPwd"
 	pwd := Pwd{}
-	if err := pwd.Execute(CommandProperties{testPath, []string{}, []string{}, "", ""}); err != nil {
+	if err := pwd.Execute(CommandProperties{testPath, []string{}, []string{}, os.Stdin, w}); err != nil {
 		t.Error("Expecting no error from Pwd function\n")
 	}
 
@@ -33,7 +29,7 @@ func TestPwd(t *testing.T) {
 
 func ExamplePwd_Execute() {
 	pwd := Pwd{}
-	pwd.Execute(CommandProperties{"Example/Path", []string{}, []string{}, "", ""})
+	pwd.Execute(CommandProperties{"Example/Path", []string{}, []string{}, os.Stdin, os.Stdout})
 	// Output:
 	// Example/Path
 }

@@ -31,12 +31,8 @@ func TestLs(t *testing.T) {
 		t.Fatal("Fatal error - cannot make pipe! - %w", err)
 	}
 
-	stdout := os.Stdout
-	defer func() { os.Stdout = stdout }()
-	os.Stdout = w
-
 	ls := Ls{}
-	if err := ls.Execute(CommandProperties{path, []string{}, []string{"l"}, "", ""}); err != nil {
+	if err := ls.Execute(CommandProperties{path, []string{}, []string{"l"}, os.Stdin, w}); err != nil {
 		t.Errorf("Expecting no error from Ls function, but got: %w\n", err)
 		return
 	}
@@ -81,7 +77,7 @@ func ExampleLs_Execute() {
 	}()
 
 	ls := Ls{}
-	ls.Execute(CommandProperties{path, []string{}, []string{}, "", ""})
+	ls.Execute(CommandProperties{path, []string{}, []string{}, os.Stdin, os.Stdout})
 	// Output:
 	// new-file
 }

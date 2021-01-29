@@ -53,13 +53,15 @@ func ExampleInterpreter() {
 	var i Interpreter
 	i.RegisterCommand(&commands.Pwd{})
 	i.Path = "example/path"
-	i.ExecuteCommand(parser.Command{
-		Name:      "pwd",
-		Arguments: []string{},
-		Options:   []string{},
-		Input:     "",
-		Output:    "",
-		BgRun:     false,
+	i.InterpretCommand([]parser.Command{
+		{
+			Name:      "pwd",
+			Arguments: []string{},
+			Options:   []string{},
+			Input:     "",
+			Output:    "",
+			BgRun:     false,
+		},
 	})
 
 	// Output:

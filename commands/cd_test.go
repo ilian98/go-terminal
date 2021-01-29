@@ -40,10 +40,10 @@ func TestCd(t *testing.T) {
 		result string
 		err    error
 	}{
-		{CommandProperties{testPath, []string{"."}, []string{}, "", ""}, testPath, nil},
-		{CommandProperties{testPath, []string{".."}, []string{}, "", ""}, parentPath, nil},
-		{CommandProperties{testPath, []string{"..", "."}, []string{}, "", ""}, "", ErrCdTooManyArgs},
-		{CommandProperties{testPath, []string{"/not/existing/path"}, []string{}, "", ""}, "", ErrCdPathNotExist},
+		{CommandProperties{testPath, []string{"."}, []string{}, os.Stdin, os.Stdout}, testPath, nil},
+		{CommandProperties{testPath, []string{".."}, []string{}, os.Stdin, os.Stdout}, parentPath, nil},
+		{CommandProperties{testPath, []string{"..", "."}, []string{}, os.Stdin, os.Stdout}, "", ErrCdTooManyArgs},
+		{CommandProperties{testPath, []string{"/not/existing/path"}, []string{}, os.Stdin, os.Stdout}, "", ErrCdPathNotExist},
 	}
 
 	for _, test := range tests {
@@ -55,7 +55,7 @@ func TestCd(t *testing.T) {
 
 func ExampleCd_Execute() {
 	cd := Cd{}
-	cd.Execute(CommandProperties{"", []string{`\`}, []string{}, "", ""})
+	cd.Execute(CommandProperties{"", []string{`\`}, []string{}, os.Stdin, os.Stdout})
 	if cd.GetPath() == cd.getRootPath() {
 		fmt.Printf("Terminal at root path!")
 	}

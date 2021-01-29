@@ -30,11 +30,8 @@ func (l *Ls) Clone() ExecuteCommand {
 // Execute is go implementation of ls command
 func (l *Ls) Execute(cp CommandProperties) error {
 	l.path = cp.Path
-	inputFile, outputFile, err := cp.openInputOutputFiles()
-	defer cp.closeInputOutputFiles(inputFile, outputFile)
-	if err != nil {
-		return err
-	}
+	inputFile, outputFile := cp.InputFile, cp.OutputFile
+	defer closeInputOutputFiles(inputFile, outputFile)
 
 	path, err := os.Open(l.path)
 	if err != nil {

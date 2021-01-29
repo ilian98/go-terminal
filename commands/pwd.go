@@ -28,11 +28,8 @@ func (p *Pwd) Clone() ExecuteCommand {
 // Execute is go implementation of pwd command
 func (p *Pwd) Execute(cp CommandProperties) error {
 	p.path = cp.Path
-	inputFile, outputFile, err := cp.openInputOutputFiles()
-	defer cp.closeInputOutputFiles(inputFile, outputFile)
-	if err != nil {
-		return err
-	}
+	inputFile, outputFile := cp.InputFile, cp.OutputFile
+	defer closeInputOutputFiles(inputFile, outputFile)
 
 	n, err := outputFile.WriteString(p.path)
 	if err != nil {

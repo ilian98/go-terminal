@@ -52,18 +52,17 @@ func main() {
 			fmt.Printf("%v\n", err)
 			continue
 		}
-		if len(parsedCommand) == 1 {
-			status := I.ExecuteCommand(parsedCommand[0])
-			if status == interpreter.ExitCommand {
-				if parsedCommand[0].Name == "bye" {
-					fmt.Println("bye")
-				}
-				fmt.Println("")
-				return
+
+		status := I.InterpretCommand(parsedCommand)
+		if status == interpreter.ExitCommand {
+			if parsedCommand[0].Name == "bye" {
+				fmt.Println("bye")
 			}
-			if status == interpreter.InvalidCommandName {
-				fmt.Printf("No command with name: %s\n", parsedCommand[0].Name)
-			}
+			fmt.Println("")
+			return
+		}
+		if status == interpreter.InvalidCommandName {
+			fmt.Printf("No command with name: %s\n", parsedCommand[0].Name)
 		}
 	}
 }

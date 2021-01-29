@@ -38,11 +38,8 @@ func (c *Cat) Clone() ExecuteCommand {
 // Execute is go implementation of cat command
 func (c *Cat) Execute(cp CommandProperties) error {
 	c.path = cp.Path
-	inputFile, outputFile, err := cp.openInputOutputFiles()
-	defer cp.closeInputOutputFiles(inputFile, outputFile)
-	if err != nil {
-		return err
-	}
+	inputFile, outputFile := cp.InputFile, cp.OutputFile
+	defer closeInputOutputFiles(inputFile, outputFile)
 
 	outputFileData := func(file *os.File) error {
 		for {
@@ -83,9 +80,11 @@ func (c *Cat) Execute(cp CommandProperties) error {
 
 	var errStrings []string
 	for _, argument := range cp.Arguments {
-		file, err := cp.openInputFile(argument)
-		if err != nil {
+		file, err := os.Open(c.path + string(os.PathSeparator) + argument)
+		if os.IsNotExist(err) {
 			errStrings = append(errStrings, fmt.Errorf("%s - %w", argument, ErrCatFileNotExist).Error())
+		} else if err != nil {
+			errStrings = append(errStrings, fmt.Errorf("%s - %w", argument, err).Error())
 		} else {
 			err := outputFileData(file)
 			file.Close()

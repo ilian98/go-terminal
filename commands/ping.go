@@ -51,11 +51,8 @@ const (
 // Execute is go implementation of ping command
 func (p *Ping) Execute(cp CommandProperties) error {
 	p.path = cp.Path
-	inputFile, outputFile, err := cp.openInputOutputFiles()
-	defer cp.closeInputOutputFiles(inputFile, outputFile)
-	if err != nil {
-		return err
-	}
+	inputFile, outputFile := cp.InputFile, cp.OutputFile
+	defer closeInputOutputFiles(inputFile, outputFile)
 
 	if len(cp.Arguments) != 1 {
 		return ErrPingOneArg
