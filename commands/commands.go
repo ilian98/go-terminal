@@ -24,16 +24,6 @@ type ExecuteCommand interface {
 	Clone() ExecuteCommand
 }
 
-// CloseInputOutputFiles is used by Exectute to close the opened input and output files
-func CloseInputOutputFiles(inputFile *os.File, outputFile *os.File) {
-	if inputFile != os.Stdin {
-		inputFile.Close()
-	}
-	if outputFile != os.Stdout {
-		outputFile.Close()
-	}
-}
-
 // FullFileName function is used to construct full file name from parameters
 func FullFileName(path string, fileName string) string {
 	var fullName string
