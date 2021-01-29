@@ -43,7 +43,7 @@ func (c *Cd) Clone() ExecuteCommand {
 func (c *Cd) Execute(cp CommandProperties) error {
 	c.path = cp.Path
 	inputFile, outputFile := cp.InputFile, cp.OutputFile
-	defer closeInputOutputFiles(inputFile, outputFile)
+	defer CloseInputOutputFiles(inputFile, outputFile)
 
 	if len(cp.Arguments) == 0 {
 		c.path = c.getRootPath()

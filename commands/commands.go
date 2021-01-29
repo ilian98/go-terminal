@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"fmt"
 	"os"
 )
 
@@ -21,11 +22,23 @@ type ExecuteCommand interface {
 	Clone() ExecuteCommand
 }
 
-func closeInputOutputFiles(inputFile *os.File, outputFile *os.File) {
+// CloseInputOutputFiles is used by Exectute to close the opened input and output files
+func CloseInputOutputFiles(inputFile *os.File, outputFile *os.File) {
 	if inputFile != os.Stdin {
 		inputFile.Close()
 	}
 	if outputFile != os.Stdout {
 		outputFile.Close()
 	}
+}
+
+func checkWrite(outputFile *os.File, text string) error {
+	n, err := outputFile.WriteString(text)
+	if err != nil {
+		return err
+	}
+	if n != len(text) {
+		return fmt.Errorf("Wrote only %d characters of: %s", n, text)
+	}
+	return nil
 }

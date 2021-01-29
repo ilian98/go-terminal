@@ -39,7 +39,7 @@ func (c *Cat) Clone() ExecuteCommand {
 func (c *Cat) Execute(cp CommandProperties) error {
 	c.path = cp.Path
 	inputFile, outputFile := cp.InputFile, cp.OutputFile
-	defer closeInputOutputFiles(inputFile, outputFile)
+	defer CloseInputOutputFiles(inputFile, outputFile)
 
 	outputFileData := func(file *os.File) error {
 		for {
@@ -49,7 +49,9 @@ func (c *Cat) Execute(cp CommandProperties) error {
 				break
 			}
 			text := string(buffer)
-			outputFile.WriteString(strings.TrimRight(text, "\u0000"))
+			if err := checkWrite(outputFile, strings.TrimRight(text, "\u0000")); err != nil {
+				return err
+			}
 			if err == io.EOF {
 				break
 			} else if err != nil {

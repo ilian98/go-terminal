@@ -17,7 +17,9 @@ func testingCat(t *testing.T, inputText string, arguments []string, expectedResu
 		t.Fatal("Fatal error - cannot make pipe! - %w", err)
 	}
 
-	inputW.WriteString(inputText)
+	if _, err := inputW.WriteString(inputText); err != nil {
+		t.Fatal("Fatal error - cannot write to pipe! - %w", err)
+	}
 	inputW.Close()
 	cat := Cat{}
 	if err := cat.Execute(CommandProperties{"test/path", arguments, []string{}, inputR, outputW}); err != nil {

@@ -56,11 +56,13 @@ const (
 func (i *Interpreter) ExecuteCommand(parsedCommand parser.Command, inputFile *os.File, outputFile *os.File) int {
 	// check if command is for exiting the terminal
 	if result, _ := i.checkForCommand(i.exitCommands, parsedCommand.Name); result == true {
+		commands.CloseInputOutputFiles(inputFile, outputFile)
 		return ExitCommand
 	}
 	// check if command with the parsed name exists
 	result, ind := i.checkForCommand(i.shellCommandsName, parsedCommand.Name)
 	if result == false {
+		commands.CloseInputOutputFiles(inputFile, outputFile)
 		return InvalidCommandName
 	}
 
@@ -89,11 +91,58 @@ func (i *Interpreter) ExecuteCommand(parsedCommand parser.Command, inputFile *os
 	return Ok
 }
 
+// Status is struct used for storing code and command name after InterpretCommand
+type Status struct {
+	Code    int
+	Command string
+}
+
 // InterpretCommand is a method of Interpreter that interpretes parsed command and executes command
-func (i *Interpreter) InterpretCommand(parsedCommand []parser.Command) int {
-	if len(parsedCommand) == 1 {
-		inputFile, outputFile, err := i.openInputOutputFiles(parsedCommand[0].Input, parsedCommand[0].Output)
-		if parsedCommand[0].BgRun == true && inputFile == os.Stdin {
+func (i *Interpreter) InterpretCommand(parsedCommand []parser.Command) []Status {
+	type pipe struct {
+		r *os.File
+		w *os.File
+	}
+	var pipes []pipe
+	for i := 0; i+1 < len(parsedCommand); i++ {
+		r, w, err := os.Pipe()
+		if err != nil {
+			fmt.Printf("%v\n", err)
+		}
+		pipes = append(pipes, pipe{r, w})
+	}
+
+	bgRun := false
+	for _, c := range parsedCommand { // we check if the pipe (command) should be run in bg mode
+		if c.BgRun == true {
+			bgRun = true
+			break
+		}
+	}
+	statuses := make(chan Status, len(parsedCommand))
+	origInterpreter := *i // we copy the interpreter to not let path change in pipe
+	isPipe := false
+	if len(parsedCommand) > 1 {
+		isPipe = true
+	}
+	for ind, c := range parsedCommand {
+		inputFile, outputFile, err := i.openInputOutputFiles(c.Input, c.Output)
+		if err != nil {
+			fmt.Printf("%v\n", err)
+		}
+		if ind > 0 && inputFile == os.Stdin {
+			inputFile = pipes[ind-1].r
+		} else if ind > 0 {
+			pipes[ind-1].r.Close() // closing that end of pipe because it won't be used
+		}
+		if ind+1 < len(parsedCommand) && outputFile == os.Stdout {
+			outputFile = pipes[ind].w
+		} else if ind+1 < len(parsedCommand) {
+			pipes[ind].w.Close() // closing that end of pipe because it won't be used
+		}
+
+		c.BgRun = bgRun
+		if c.BgRun == true && inputFile == os.Stdin {
 			// we make sure that command ran in bg mode won't try to read from stdin
 			r, w, err := os.Pipe()
 			if err != nil {
@@ -104,13 +153,19 @@ func (i *Interpreter) InterpretCommand(parsedCommand []parser.Command) int {
 			w.Close()
 		}
 
-		if err != nil {
-			fmt.Printf("%v\n", err)
-			return 0
-		}
-		return i.ExecuteCommand(parsedCommand[0], inputFile, outputFile)
+		go func(currInterpreter Interpreter, c parser.Command, inputFile *os.File, outputFile *os.File) {
+			statuses <- Status{currInterpreter.ExecuteCommand(c, inputFile, outputFile), c.Name}
+			if !isPipe && c.BgRun == false { // path can be changed only for one command not in pipe and bg run
+				i.Path = currInterpreter.Path // we don't have concurrent access to i.Path because it isn't pipe
+			}
+		}(origInterpreter, c, inputFile, outputFile)
 	}
-	return 0
+
+	var result []Status
+	for i := 0; i < len(parsedCommand); i++ {
+		result = append(result, <-statuses)
+	}
+	return result
 }
 
 func (i *Interpreter) checkForCommand(names []string, target string) (bool, int) {

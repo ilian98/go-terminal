@@ -31,7 +31,7 @@ func (l *Ls) Clone() ExecuteCommand {
 func (l *Ls) Execute(cp CommandProperties) error {
 	l.path = cp.Path
 	inputFile, outputFile := cp.InputFile, cp.OutputFile
-	defer closeInputOutputFiles(inputFile, outputFile)
+	defer CloseInputOutputFiles(inputFile, outputFile)
 
 	path, err := os.Open(l.path)
 	if err != nil {

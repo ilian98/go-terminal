@@ -1,9 +1,5 @@
 package commands
 
-import (
-	"fmt"
-)
-
 // Pwd is a structure for pwd command, implementing ExecuteCommand interface
 type Pwd struct {
 	path string
@@ -29,14 +25,10 @@ func (p *Pwd) Clone() ExecuteCommand {
 func (p *Pwd) Execute(cp CommandProperties) error {
 	p.path = cp.Path
 	inputFile, outputFile := cp.InputFile, cp.OutputFile
-	defer closeInputOutputFiles(inputFile, outputFile)
+	defer CloseInputOutputFiles(inputFile, outputFile)
 
-	n, err := outputFile.WriteString(p.path)
-	if err != nil {
+	if err := checkWrite(outputFile, p.path); err != nil {
 		return err
-	}
-	if n != len(p.path) {
-		return fmt.Errorf("Wrote only %d characters of current path: %s", n, p.path)
 	}
 
 	return nil

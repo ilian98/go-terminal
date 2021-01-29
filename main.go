@@ -53,16 +53,18 @@ func main() {
 			continue
 		}
 
-		status := I.InterpretCommand(parsedCommand)
-		if status == interpreter.ExitCommand {
+		statuses := I.InterpretCommand(parsedCommand)
+		if len(statuses) == 1 && statuses[0].Code == interpreter.ExitCommand {
 			if parsedCommand[0].Name == "bye" {
 				fmt.Println("bye")
 			}
 			fmt.Println("")
 			return
 		}
-		if status == interpreter.InvalidCommandName {
-			fmt.Printf("No command with name: %s\n", parsedCommand[0].Name)
+		for _, status := range statuses {
+			if status.Code == interpreter.InvalidCommandName {
+				fmt.Printf("No command with name: %s\n", status.Command)
+			}
 		}
 	}
 }

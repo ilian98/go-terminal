@@ -52,7 +52,7 @@ const (
 func (p *Ping) Execute(cp CommandProperties) error {
 	p.path = cp.Path
 	inputFile, outputFile := cp.InputFile, cp.OutputFile
-	defer closeInputOutputFiles(inputFile, outputFile)
+	defer CloseInputOutputFiles(inputFile, outputFile)
 
 	if len(cp.Arguments) != 1 {
 		return ErrPingOneArg
@@ -61,11 +61,16 @@ func (p *Ping) Execute(cp CommandProperties) error {
 	p.host = cp.Arguments[0]
 	port := "80"
 
-	outputFile.WriteString("Pinging " + p.host)
+	if err := checkWrite(outputFile, "Pinging "+p.host); err != nil {
+		return err
+	}
 
-	outputIP := func(connection net.Conn) {
+	outputIP := func(connection net.Conn) error {
 		address := connection.RemoteAddr().String()
-		outputFile.WriteString(" [" + address + "]\n")
+		if err := checkWrite(outputFile, " ["+address+"]\n"); err != nil {
+			return err
+		}
+		return nil
 	}
 
 	var times []time.Duration
@@ -89,9 +94,13 @@ func (p *Ping) Execute(cp CommandProperties) error {
 			endTime = time.Now()
 			if result.error != nil {
 				if i == 0 && result.Conn != nil {
-					outputIP(result.Conn)
+					if err := outputIP(result.Conn); err != nil {
+						return err
+					}
 				}
-				outputFile.WriteString("\n")
+				if err := checkWrite(outputFile, "\n"); err != nil {
+					return err
+				}
 				return fmt.Errorf("%v, %w", result.error, ErrPingDial)
 			}
 			if p.connection == nil {
@@ -99,45 +108,81 @@ func (p *Ping) Execute(cp CommandProperties) error {
 			}
 		case <-time.After(DefaultTimeOut):
 			if i == 0 {
-				outputFile.WriteString("\n")
+				if err := checkWrite(outputFile, "\n"); err != nil {
+					return err
+				}
+
 			}
-			outputFile.WriteString("Request timed out.\n")
+			if err := checkWrite(outputFile, "Request timed out.\n"); err != nil {
+				return err
+			}
 		}
 
 		if endTime != startTime {
 			if i == 0 {
-				outputIP(p.connection)
+				if err := outputIP(p.connection); err != nil {
+					return err
+				}
 			}
 			time := endTime.Sub(startTime)
-			outputFile.WriteString("Reply from " + p.connection.RemoteAddr().String() + ": time = " + time.String() + "\n")
+			if err := checkWrite(outputFile, "Reply from "+p.connection.RemoteAddr().String()+
+				": time = "+time.String()+"\n"); err != nil {
+				return err
+			}
 			times = append(times, time)
 		}
 	}
 
-	p.outputStatistics(outputFile, len(times), times)
+	if err := p.outputStatistics(outputFile, len(times), times); err != nil {
+		return err
+	}
 	return nil
 }
 
-func (p *Ping) outputStatistics(outputFile *os.File, cntReceived int, times []time.Duration) {
-	outputFile.WriteString("Ping statistics for ")
+func (p *Ping) outputStatistics(outputFile *os.File, cntReceived int, times []time.Duration) error {
+	if err := checkWrite(outputFile, "Ping statistics for "); err != nil {
+		return err
+	}
 	if p.connection != nil {
-		outputFile.WriteString(p.connection.RemoteAddr().String() + ":\n")
+		if err := checkWrite(outputFile, p.connection.RemoteAddr().String()+":\n"); err != nil {
+			return err
+		}
 	} else {
-		outputFile.WriteString(p.host + ":\n")
+		if err := checkWrite(outputFile, p.host+":\n"); err != nil {
+			return err
+		}
 	}
 	lost := PingRepetitions - cntReceived
-	outputFile.WriteString("    Packets: Sent = " + strconv.Itoa(PingRepetitions))
-	outputFile.WriteString(", Received = " + strconv.Itoa(cntReceived))
-	outputFile.WriteString(", Lost = " + strconv.Itoa(lost))
-	outputFile.WriteString(" (" + strconv.Itoa(lost*100/PingRepetitions) + "% loss)\n")
+	if err := checkWrite(outputFile, "    Packets: Sent = "+strconv.Itoa(PingRepetitions)); err != nil {
+		return err
+	}
+	if err := checkWrite(outputFile, ", Received = "+strconv.Itoa(cntReceived)); err != nil {
+		return err
+	}
+	if err := checkWrite(outputFile, ", Lost = "+strconv.Itoa(lost)); err != nil {
+		return err
+	}
+	if err := checkWrite(outputFile, " ("+strconv.Itoa(lost*100/PingRepetitions)+"% loss)\n"); err != nil {
+		return err
+	}
 
 	if cntReceived == 0 {
-		return
+		return nil
 	}
-	outputFile.WriteString("Approximate round trip times in milli-seconds:\n")
-	outputFile.WriteString("    Minimum = " + minimumTime(times).String())
-	outputFile.WriteString(", Maximum = " + maximumTime(times).String())
-	outputFile.WriteString(", Average = " + averageTime(times).String())
+	if err := checkWrite(outputFile, "Approximate round trip times in milli-seconds:\n"); err != nil {
+		return err
+	}
+	if err := checkWrite(outputFile, "    Minimum = "+minimumTime(times).String()); err != nil {
+		return err
+	}
+	if err := checkWrite(outputFile, ", Maximum = "+maximumTime(times).String()); err != nil {
+		return err
+	}
+	if err := checkWrite(outputFile, ", Average = "+averageTime(times).String()); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func minimumTime(times []time.Duration) time.Duration {
