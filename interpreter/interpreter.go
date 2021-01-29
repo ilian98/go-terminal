@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"runtime"
 
 	"github.com/ilian98/go-terminal/commands"
 	"github.com/ilian98/go-terminal/parser"
@@ -15,6 +16,7 @@ type Interpreter struct {
 	exitCommands      []string
 	shellCommandsName []string
 	shellCommands     []commands.ExecuteCommand
+	StopSignal        *chan struct{}
 }
 
 var (
@@ -44,6 +46,7 @@ func (i *Interpreter) RegisterCommand(c commands.ExecuteCommand) error {
 
 // These constants are used for the status of method ExecutedCommand
 const (
+	InvalidCode = -1
 	// Ok indicates that there were no errors excluding errors from executed command
 	Ok = iota
 	// ExitCommand indicates that the command is for exiting the terminal
@@ -76,8 +79,17 @@ func (i *Interpreter) ExecuteCommand(parsedCommand parser.Command, inputFile *os
 
 	command := i.shellCommands[ind].Clone()
 	runCommand := func() {
-		if err := command.Execute(cp); err != nil {
-			fmt.Printf("%v\n", err)
+		result := make(chan error, 1)
+		go func() {
+			result <- command.Execute(cp)
+		}()
+		select {
+		case <-(*i.StopSignal):
+			runtime.Goexit() // we stop current goroutine, there is no easy way to stop the running function
+		case err := <-result:
+			if err != nil {
+				fmt.Printf("%v\n", err)
+			}
 		}
 	}
 
@@ -119,6 +131,9 @@ func (i *Interpreter) InterpretCommand(parsedCommand []parser.Command) []Status 
 			break
 		}
 	}
+
+	ch := make(chan struct{}, len(parsedCommand))
+	i.StopSignal = &ch
 	statuses := make(chan Status, len(parsedCommand))
 	origInterpreter := *i // we copy the interpreter to not let path change in pipe
 	isPipe := false
@@ -154,7 +169,16 @@ func (i *Interpreter) InterpretCommand(parsedCommand []parser.Command) []Status 
 		}
 
 		go func(currInterpreter Interpreter, c parser.Command, inputFile *os.File, outputFile *os.File) {
-			statuses <- Status{currInterpreter.ExecuteCommand(c, inputFile, outputFile), c.Name}
+			s := Status{InvalidCode, c.Name}
+			defer func(s *Status) {
+				if s.Code == InvalidCode { // if code is Invalid, then the go routine was interupted
+					s.Code = Ok
+					statuses <- *s
+				}
+			}(&s)
+
+			s = Status{currInterpreter.ExecuteCommand(c, inputFile, outputFile), c.Name}
+			statuses <- s
 			if !isPipe && c.BgRun == false { // path can be changed only for one command not in pipe and bg run
 				i.Path = currInterpreter.Path // we don't have concurrent access to i.Path because it isn't pipe
 			}
