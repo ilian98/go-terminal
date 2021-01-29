@@ -19,7 +19,7 @@ func init() {
 	}
 
 	commands := [...]commands.ExecuteCommand{
-		&commands.Pwd{}, &commands.Cd{}, &commands.Ls{}, &commands.Cat{}, &commands.Ping{},
+		&commands.Pwd{}, &commands.Cd{}, &commands.Ls{}, &commands.Cat{}, &commands.Find{}, &commands.Ping{},
 	}
 	for _, command := range commands {
 		I.RegisterCommand(command)

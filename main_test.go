@@ -82,8 +82,8 @@ func testingPipe(t *testing.T, inputText string, fileData string, expectedResult
 	}()
 	select {
 	case <-finish:
-	case <-time.After(1 * time.Second):
-		t.Error("Main didn't finish for 1 second")
+	case <-time.After(5 * time.Second):
+		t.Error("Main didn't finish for 5 seconds")
 		return
 	}
 	path, err := os.Getwd()
