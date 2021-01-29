@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
-	"strings"
 )
 
 var (
@@ -46,7 +44,7 @@ func (c *Cd) Execute(cp CommandProperties) error {
 	defer CloseInputOutputFiles(inputFile, outputFile)
 
 	if len(cp.Arguments) == 0 {
-		c.path = c.getRootPath()
+		c.path = getRootPath(c.path)
 		return nil
 	}
 	if len(cp.Arguments) > 1 {
@@ -55,24 +53,11 @@ func (c *Cd) Execute(cp CommandProperties) error {
 
 	path := cp.Arguments[0]
 	if len(path) == 0 {
-		c.path = c.getRootPath()
+		c.path = getRootPath(c.path)
 		return nil
 	}
 
-	var tryPath string
-	if runtime.GOOS == "windows" {
-		if path[0] == '\\' || strings.TrimPrefix(path, c.getRootPath()) != path {
-			tryPath = path
-		} else {
-			tryPath = c.path + `\` + path
-		}
-	} else {
-		if path[0] == '/' {
-			tryPath = path
-		} else {
-			tryPath = c.path + "/" + path
-		}
-	}
+	tryPath := FullFileName(c.path, path)
 
 	stat, err := os.Stat(tryPath)
 	if err == nil && stat.IsDir() {
@@ -88,21 +73,4 @@ func (c *Cd) Execute(cp CommandProperties) error {
 		return fmt.Errorf("%s - %w", tryPath, ErrCdPathNotExist)
 	}
 	return err
-}
-
-func (c *Cd) getRootPath() string {
-	if runtime.GOOS == "windows" {
-		// path delimiter in Windows is \
-		res := strings.SplitAfterN(c.path, `\`, 2)
-		if len(res) == 0 {
-			panic("Cannot get root path!")
-		}
-		return res[0]
-	}
-	// path delimiter in Unix-like OS-es is /
-	res := strings.SplitAfterN(c.path, `/`, 2)
-	if len(res) == 0 {
-		panic("Cannot get root path!")
-	}
-	return res[0]
 }

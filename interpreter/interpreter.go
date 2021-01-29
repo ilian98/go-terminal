@@ -177,15 +177,11 @@ func (i *Interpreter) checkForCommand(names []string, target string) (bool, int)
 	return false, -1
 }
 
-func (i *Interpreter) pathFile(fileName string) string {
-	return i.Path + string(os.PathSeparator) + fileName
-}
-
 func (i *Interpreter) openInputFile(fileName string) (*os.File, error) {
 	if fileName == "" {
 		return os.Stdin, nil
 	}
-	file, err := os.Open(i.pathFile(fileName))
+	file, err := os.Open(commands.FullFileName(i.Path, fileName))
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, fmt.Errorf("File for reading the input with name %s does not exist", fileName)
@@ -199,7 +195,7 @@ func (i *Interpreter) openOutputFile(fileName string) (*os.File, error) {
 	if fileName == "" {
 		return os.Stdout, nil
 	}
-	file, err := os.OpenFile(i.pathFile(fileName), os.O_CREATE|os.O_WRONLY, 0666)
+	file, err := os.OpenFile(commands.FullFileName(i.Path, fileName), os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
 		return nil, err
 	}

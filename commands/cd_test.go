@@ -56,7 +56,9 @@ func TestCd(t *testing.T) {
 func ExampleCd_Execute() {
 	cd := Cd{}
 	cd.Execute(CommandProperties{"", []string{`\`}, []string{}, os.Stdin, os.Stdout})
-	if cd.GetPath() == cd.getRootPath() {
+
+	path, _ := os.Getwd()
+	if cd.GetPath() == getRootPath(path) {
 		fmt.Printf("Terminal at root path!")
 	}
 	// Output:

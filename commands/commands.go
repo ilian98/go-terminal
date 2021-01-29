@@ -3,6 +3,8 @@ package commands
 import (
 	"fmt"
 	"os"
+	"runtime"
+	"strings"
 )
 
 // CommandProperties is used for storing the properties of command that will be executed
@@ -30,6 +32,42 @@ func CloseInputOutputFiles(inputFile *os.File, outputFile *os.File) {
 	if outputFile != os.Stdout {
 		outputFile.Close()
 	}
+}
+
+// FullFileName function is used to construct full file name from parameters
+func FullFileName(path string, fileName string) string {
+	var fullName string
+	if runtime.GOOS == "windows" {
+		if fileName[0] == '\\' || strings.TrimPrefix(fileName, getRootPath(path)) != fileName {
+			fullName = fileName
+		} else {
+			fullName = path + `\` + fileName
+		}
+	} else {
+		if fileName[0] == '/' {
+			fullName = fileName
+		} else {
+			fullName = path + "/" + fileName
+		}
+	}
+	return fullName
+}
+
+func getRootPath(path string) string {
+	if runtime.GOOS == "windows" {
+		// path delimiter in Windows is \
+		res := strings.SplitAfterN(path, `\`, 2)
+		if len(res) == 0 {
+			panic("Cannot get root path!")
+		}
+		return res[0]
+	}
+	// path delimiter in Unix-like OS-es is /
+	res := strings.SplitAfterN(path, `/`, 2)
+	if len(res) == 0 {
+		panic("Cannot get root path!")
+	}
+	return res[0]
 }
 
 func checkWrite(outputFile *os.File, text string) error {
