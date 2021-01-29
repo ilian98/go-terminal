@@ -38,8 +38,6 @@ func (m *Mkdir) Clone() ExecuteCommand {
 // Execute is go implementation of mkdir command
 func (m *Mkdir) Execute(cp CommandProperties) error {
 	m.path = cp.Path
-	inputFile, outputFile := cp.InputFile, cp.OutputFile
-	defer CloseInputOutputFiles(inputFile, outputFile)
 
 	if len(cp.Arguments) == 0 {
 		return ErrRmNoArgs

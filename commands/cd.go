@@ -40,8 +40,6 @@ func (c *Cd) Clone() ExecuteCommand {
 // Execute is go implementation of cd command
 func (c *Cd) Execute(cp CommandProperties) error {
 	c.path = cp.Path
-	inputFile, outputFile := cp.InputFile, cp.OutputFile
-	defer CloseInputOutputFiles(inputFile, outputFile)
 
 	if len(cp.Arguments) == 0 {
 		c.path = getRootPath(c.path)

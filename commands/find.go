@@ -38,8 +38,7 @@ func (f *Find) Clone() ExecuteCommand {
 // Execute is go implementation of pwd command
 func (f *Find) Execute(cp CommandProperties) error {
 	f.path = cp.Path
-	inputFile, outputFile := cp.InputFile, cp.OutputFile
-	defer CloseInputOutputFiles(inputFile, outputFile)
+	_, outputFile := cp.InputFile, cp.OutputFile
 
 	if len(cp.Arguments) == 0 {
 		return ErrFindNoArgs

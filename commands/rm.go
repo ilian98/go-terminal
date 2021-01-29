@@ -42,8 +42,6 @@ func (r *Rm) Clone() ExecuteCommand {
 // Execute is go implementation of rm command
 func (r *Rm) Execute(cp CommandProperties) error {
 	r.path = cp.Path
-	inputFile, outputFile := cp.InputFile, cp.OutputFile
-	defer CloseInputOutputFiles(inputFile, outputFile)
 
 	if len(cp.Arguments) == 0 {
 		return ErrRmNoArgs

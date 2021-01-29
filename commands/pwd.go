@@ -24,8 +24,7 @@ func (p *Pwd) Clone() ExecuteCommand {
 // Execute is go implementation of pwd command
 func (p *Pwd) Execute(cp CommandProperties) error {
 	p.path = cp.Path
-	inputFile, outputFile := cp.InputFile, cp.OutputFile
-	defer CloseInputOutputFiles(inputFile, outputFile)
+	_, outputFile := cp.InputFile, cp.OutputFile
 
 	if err := checkWrite(outputFile, p.path); err != nil {
 		return err

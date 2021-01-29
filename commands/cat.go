@@ -39,7 +39,6 @@ func (c *Cat) Clone() ExecuteCommand {
 func (c *Cat) Execute(cp CommandProperties) error {
 	c.path = cp.Path
 	inputFile, outputFile := cp.InputFile, cp.OutputFile
-	defer CloseInputOutputFiles(inputFile, outputFile)
 
 	outputFileData := func(file *os.File) error {
 		for {

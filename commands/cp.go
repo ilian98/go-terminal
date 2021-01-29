@@ -42,8 +42,6 @@ func (c *Cp) Clone() ExecuteCommand {
 // Execute is go implementation of cp command
 func (c *Cp) Execute(cp CommandProperties) error {
 	c.path = cp.Path
-	inputFile, outputFile := cp.InputFile, cp.OutputFile
-	defer CloseInputOutputFiles(inputFile, outputFile)
 
 	if len(cp.Arguments) != 2 {
 		return ErrCpTwoArgs
