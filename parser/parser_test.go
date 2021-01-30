@@ -34,7 +34,7 @@ func TestReplaceEnclosed(t *testing.T) {
 }
 
 // helper functions for Command struct
-func (c1 *Command) equal(c2 *Command) bool {
+func (c1 *Command) equal(c2 Command) bool {
 	if c1.Name != c2.Name {
 		return false
 	}
@@ -66,11 +66,11 @@ func (c1 *Command) equal(c2 *Command) bool {
 	}
 	return true
 }
-func (c1 *Command) notEqual(c2 *Command) bool {
+func (c1 *Command) notEqual(c2 Command) bool {
 	return !c1.equal(c2)
 }
 
-func commandToString(c *Command) string {
+func commandToString(c Command) string {
 	output := c.Name + " ["
 	for _, option := range c.Options {
 		output += " " + option
@@ -101,7 +101,7 @@ func newCommand(Name string, Options []string, Arguments []string) Command {
 	return Command{Name, Options, Arguments, "", "", false}
 }
 
-func testingParseCommandText(t *testing.T, commandText string, expectedResult *Command) {
+func testingParseCommandText(t *testing.T, commandText string, expectedResult Command) {
 	result, err := parseCommandText(commandText)
 	if err != nil {
 		t.Errorf("Expected no error, but got: %w\n", err)
@@ -147,15 +147,15 @@ func TestParseCommandText(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("parseCommandText(%s)", test.commandText), func(t *testing.T) {
-			testingParseCommandText(t, test.commandText, &test.result)
+			testingParseCommandText(t, test.commandText, test.result)
 		})
 	}
 }
 
 func commandsToString(commands []Command) string {
-	output := commandToString(&commands[0])
+	output := commandToString(commands[0])
 	for _, command := range commands[1:] {
-		output += " | " + commandToString(&command)
+		output += " | " + commandToString(command)
 	}
 	return output
 }
@@ -173,7 +173,7 @@ func testingParse(t *testing.T, text string, expectedResult []Command, expectedE
 		return
 	}
 	for ind := range result {
-		if result[ind].notEqual(&expectedResult[ind]) {
+		if result[ind].notEqual(expectedResult[ind]) {
 			t.Errorf("Expected\n")
 			t.Error(commandsToString(expectedResult))
 			t.Errorf("but got\n")
@@ -227,8 +227,8 @@ func TestParse(t *testing.T) {
 }
 
 func ExampleParse() {
-	parsedCommand, _ := Parse("ls -l\n")
+	parsedCommand, _ := Parse("ls -l &\n")
 	fmt.Println(commandsToString(parsedCommand))
 	// Output:
-	// ls [ l ] [ ] stdin stdout
+	// ls [ l ] [ ] stdin stdout background run
 }

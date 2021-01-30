@@ -32,7 +32,7 @@ func TestLs(t *testing.T) {
 	}
 
 	ls := Ls{}
-	if err := ls.Execute(&CommandProperties{path, []string{}, []string{"l"}, os.Stdin, w, make(chan struct{})}); err != nil {
+	if err := ls.Execute(&CommandProperties{path, []string{}, []string{"l"}, os.Stdin, w, make(chan struct{}, 1)}); err != nil {
 		t.Errorf("Expecting no error from Ls function, but got: %w\n", err)
 		return
 	}

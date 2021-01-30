@@ -18,9 +18,9 @@ type CommandProperties struct {
 	Path          string //  Path is used for storing the current path in the terminal for this command
 	Arguments     []string
 	Options       []string
-	InputFile     *os.File // InputFile is used for reading the input it could be stdin
-	OutputFile    *os.File // OutputFile is used for reading the input it could be stdin
-	StopExecution chan struct{}
+	InputFile     *os.File      // InputFile is used for reading the input it could be stdin
+	OutputFile    *os.File      // OutputFile is used for reading the input it could be stdin
+	StopExecution chan struct{} // StopExecution is used for catching Ctrl+C interruptions
 }
 
 func newCp(Path string, Arguments []string, Options []string) *CommandProperties {

@@ -1,3 +1,6 @@
+// Package parser parses one line of text.
+// After parsing the text it returns either ErrEmptyCommand error or a slice of struct Command which stores commands' properties after parsing.
+// It returns slice because one line can have many commands, which are piped.
 package parser
 
 import (
@@ -22,12 +25,12 @@ var (
 	ErrEmptyCommand = errors.New("empty command")
 )
 
-// replaceEnclose replaces only those target characters with value that are enclosed in quotest
+// replaceEnclose replaces only those target characters equal to value that are enclosed in quotes
 func replaceEnclosed(text string, target byte, value byte) string {
 	byteText := []byte(text)
 	quotes := 0
 	for ind, char := range byteText {
-		if char == target && quotes%2 == 1 {
+		if char == target && quotes%2 == 1 { // quotes is odd, that means we have an open quote
 			byteText[ind] = value
 		}
 		if char == '"' {
@@ -37,14 +40,16 @@ func replaceEnclosed(text string, target byte, value byte) string {
 	return string(byteText)
 }
 
-func parseCommandText(commandText string) (*Command, error) {
+// parseCommandText has one parameter commandText which should be text of only one command.
+// It returns either ErrEmptyCommand error or element of struct Command, storing the properties
+func parseCommandText(commandText string) (Command, error) {
 	commandText = strings.TrimSpace(commandText)
 
-	commandText = replaceEnclosed(commandText, '\t', 0) // replace '\t' characters in probably arguments names with '\0' for save remove
+	commandText = replaceEnclosed(commandText, '\t', 0) // replace '\t' characters in probably arguments names with 0 for save Replace
 	commandText = strings.Replace(commandText, "\t", " ", -1)
-	commandText = replaceEnclosed(commandText, 0, '\t')
+	commandText = replaceEnclosed(commandText, 0, '\t') // restoration of the '\t' characters
 
-	commandText = replaceEnclosed(commandText, ' ', 0) // replace ' ' characters in probably arguments names with '\0' for save Split
+	commandText = replaceEnclosed(commandText, ' ', 0) // replace ' ' characters in probably arguments names with 0 for save Split
 	words := strings.Split(commandText, " ")
 	// restoration of the ' ' characters
 	for i, word := range words {
@@ -52,7 +57,7 @@ func parseCommandText(commandText string) (*Command, error) {
 	}
 
 	if len(words) == 1 && len(words[0]) == 0 {
-		return nil, ErrEmptyCommand
+		return Command{}, ErrEmptyCommand
 	}
 
 	var c Command
@@ -78,7 +83,7 @@ func parseCommandText(commandText string) (*Command, error) {
 			c.Options = append(c.Options, word[1:])
 		} else if c.Input == "" && word[0] == '<' {
 			// First argument with '<' will be considered for input, others will be counted as arguments
-			if len(word) == 1 && (1+ind)+1 < len(words) {
+			if len(word) == 1 && (1+ind)+1 < len(words) { // (1+ind) because we start range from 1
 				// This means file name is next argument
 				c.Input = removeQuotes(words[(1+ind)+1])
 				words[(1+ind)+1] = "" // This way we will skip it in next iteration
@@ -87,7 +92,7 @@ func parseCommandText(commandText string) (*Command, error) {
 			}
 		} else if c.Output == "" && word[0] == '>' {
 			// First argument with '>' will be considered for output, others will be counted as arguments
-			if len(word) == 1 && (1+ind)+1 < len(words) {
+			if len(word) == 1 && (1+ind)+1 < len(words) { // (1+ind) because we start range from 1
 				// This means file name is next argument
 				c.Output = removeQuotes(words[(1+ind)+1])
 				words[(1+ind)+1] = "" // This way we will skip it in next iteration
@@ -98,7 +103,7 @@ func parseCommandText(commandText string) (*Command, error) {
 			c.Arguments = append(c.Arguments, removeQuotes(word))
 		}
 	}
-	return &c, nil
+	return c, nil
 }
 
 // Parse parses the string parameter text which should be an inputted command
@@ -111,7 +116,7 @@ func Parse(text string) ([]Command, error) {
 
 	var parsedCommand []Command
 
-	text = replaceEnclosed(text, '|', 0) // replace '|' characters in probably arguments names with '\0' for save Split
+	text = replaceEnclosed(text, '|', 0) // replace '|' characters in probably arguments names with 0 for save Split
 	commandsText := strings.Split(text, "|")
 	// restoration of the '|' characters
 	for i, commandText := range commandsText {
@@ -123,7 +128,7 @@ func Parse(text string) ([]Command, error) {
 		if err != nil {
 			return nil, fmt.Errorf("Error when parsing command %s: %w", commandText, err)
 		}
-		parsedCommand = append(parsedCommand, *command)
+		parsedCommand = append(parsedCommand, command)
 	}
 	return parsedCommand, nil
 }
