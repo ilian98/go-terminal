@@ -16,7 +16,8 @@ var (
 
 // Cat is a structure for cat command, implementing ExecuteCommand interface
 type Cat struct {
-	path string
+	path          string
+	stopExecution chan struct{}
 }
 
 // GetName is a getter for command name
@@ -35,18 +36,36 @@ func (c *Cat) Clone() ExecuteCommand {
 	return &clone
 }
 
+// StopSignal is a method for registering stop signal of the execution of the command
+// It writes to stopExecution channel
+func (c *Cat) StopSignal() {
+	c.stopExecution <- struct{}{}
+}
+
+// IsStopSignal is a method for checking if stop signal was sent
+// It checks if there is a signal in stopExecution channel
+func (c *Cat) IsStopSignal() bool {
+	select {
+	case <-c.stopExecution:
+		return true
+	default:
+		return false
+	}
+}
+
 // Execute is go implementation of cat command
-func (c *Cat) Execute(cp *CommandProperties) error {
+func (c *Cat) Execute(cp CommandProperties) error {
+	c.stopExecution = make(chan struct{}, 1)
 	c.path = cp.Path
 	inputFile, outputFile := cp.InputFile, cp.OutputFile
 
 	outputFileData := func(file *os.File) error {
 		for {
-			text, err := cp.checkRead(file)
+			text, err := checkRead(c, file)
 			if len(text) == 0 {
 				break
 			}
-			if err := cp.checkWrite(outputFile, text); err != nil {
+			if err := checkWrite(c, outputFile, text); err != nil {
 				return err
 			}
 			if err == io.EOF {

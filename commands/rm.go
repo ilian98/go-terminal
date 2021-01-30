@@ -20,7 +20,8 @@ var (
 
 // Rm is a structure for rm command, implementing ExecuteCommand interface
 type Rm struct {
-	path string
+	path          string
+	stopExecution chan struct{}
 }
 
 // GetName is a getter for command name
@@ -39,8 +40,26 @@ func (r *Rm) Clone() ExecuteCommand {
 	return &clone
 }
 
+// StopSignal is a method for registering stop signal of the execution of the command
+// It writes to stopExecution channel
+func (r *Rm) StopSignal() {
+	r.stopExecution <- struct{}{}
+}
+
+// IsStopSignal is a method for checking if stop signal was sent
+// It checks if there is a signal in stopExecution channel
+func (r *Rm) IsStopSignal() bool {
+	select {
+	case <-r.stopExecution:
+		return true
+	default:
+		return false
+	}
+}
+
 // Execute is go implementation of rm command
-func (r *Rm) Execute(cp *CommandProperties) error {
+func (r *Rm) Execute(cp CommandProperties) error {
+	r.stopExecution = make(chan struct{}, 1)
 	r.path = cp.Path
 
 	if len(cp.Arguments) == 0 {

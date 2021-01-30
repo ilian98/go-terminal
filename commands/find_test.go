@@ -27,7 +27,7 @@ func TestFind(t *testing.T) {
 	}
 
 	find := Find{}
-	if err := find.Execute(&CommandProperties{path, []string{"new-file", "new-file"}, []string{}, os.Stdin, w, make(chan struct{}, 1)}); err != nil {
+	if err := find.Execute(CommandProperties{path, []string{"new-file", "new-file"}, []string{}, os.Stdin, w}); err != nil {
 		t.Errorf("Expecting no error from Find function, but got: %w\n", err)
 		return
 	}
@@ -47,7 +47,7 @@ func TestFind(t *testing.T) {
 		return
 	}
 
-	if err := find.Execute(&CommandProperties{path, []string{}, []string{}, os.Stdin, w, make(chan struct{}, 1)}); err != ErrFindNoArgs {
+	if err := find.Execute(CommandProperties{path, []string{}, []string{}, os.Stdin, w}); err != ErrFindNoArgs {
 		t.Errorf("Expecting error %v, but got: %w\n", ErrFindNoArgs, err)
 		return
 	}

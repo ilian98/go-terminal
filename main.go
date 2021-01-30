@@ -15,7 +15,9 @@ var I interpreter.Interpreter
 
 func init() {
 	for _, exitCommand := range []string{"exit", "logout", "bye"} {
-		I.RegisterExitCommand(exitCommand)
+		if err := I.RegisterExitCommand(exitCommand); err != nil {
+			fmt.Printf("%v\n", err)
+		}
 	}
 
 	commands := [...]commands.ExecuteCommand{
@@ -24,7 +26,9 @@ func init() {
 		&commands.Find{}, &commands.Ping{},
 	}
 	for _, command := range commands {
-		I.RegisterCommand(command)
+		if err := I.RegisterCommand(command); err != nil {
+			fmt.Printf("%v\n", err)
+		}
 	}
 }
 

@@ -72,12 +72,12 @@ func (c1 *Command) notEqual(c2 Command) bool {
 
 func commandToString(c Command) string {
 	output := c.Name + " ["
-	for _, option := range c.Options {
-		output += " " + option
-	}
-	output += " ] ["
 	for _, argument := range c.Arguments {
 		output += " " + argument
+	}
+	output += " ] ["
+	for _, option := range c.Options {
+		output += " " + option
 	}
 	output += " ]"
 
@@ -97,14 +97,14 @@ func commandToString(c Command) string {
 	}
 	return output
 }
-func newCommand(Name string, Options []string, Arguments []string) Command {
-	return Command{Name, Options, Arguments, "", "", false}
+func newCommand(Name string, Arguments []string, Options []string) Command {
+	return Command{Name, Arguments, Options, "", "", false}
 }
 
 func testingParseCommandText(t *testing.T, commandText string, expectedResult Command) {
 	result, err := parseCommandText(commandText)
 	if err != nil {
-		t.Errorf("Expected no error, but got: %w\n", err)
+		t.Errorf("Expected no error, but got: %v\n", err)
 		return
 	}
 	if result.notEqual(expectedResult) {
@@ -122,26 +122,26 @@ func TestParseCommandText(t *testing.T) {
 	}{
 		{"exit", newCommand("exit", []string{}, []string{})},
 
-		{"ls -l", newCommand("ls", []string{"l"}, []string{})},
-		{"ls 	 -l", newCommand("ls", []string{"l"}, []string{})},
-		{"ls -l arg1", newCommand("ls", []string{"l"}, []string{"arg1"})},
-		{`ls -l arg1 -a "ab c|d"`, newCommand("ls", []string{"l", "a"}, []string{"arg1", "ab c|d"})},
-		{`ls -l arg1 "-arg2"`, newCommand("ls", []string{"l"}, []string{"arg1", "-arg2"})},
-		{`ls -l arg1 "arg2`, newCommand("ls", []string{"l"}, []string{"arg1", `"arg2`})},
-		{`ls -l ""`, newCommand("ls", []string{"l"}, []string{`""`})},
+		{"ls -l", newCommand("ls", []string{}, []string{"l"})},
+		{"ls 	 -l", newCommand("ls", []string{}, []string{"l"})},
+		{"ls -l arg1", newCommand("ls", []string{"arg1"}, []string{"l"})},
+		{`ls -l arg1 -a "ab c|d"`, newCommand("ls", []string{"arg1", "ab c|d"}, []string{"l", "a"})},
+		{`ls -l arg1 "-arg2"`, newCommand("ls", []string{"arg1", "-arg2"}, []string{"l"})},
+		{`ls -l arg1 "arg2`, newCommand("ls", []string{"arg1", `"arg2`}, []string{"l"})},
+		{`ls -l ""`, newCommand("ls", []string{`""`}, []string{"l"})},
 
 		{"cat <file.txt", Command{"cat", []string{}, []string{}, "file.txt", "", false}},
 		{`cat <"file 1.txt"`, Command{"cat", []string{}, []string{}, "file 1.txt", "", false}},
 		{`cat >"file 2.txt"`, Command{"cat", []string{}, []string{}, "", "file 2.txt", false}},
-		{"cat <file1.txt <file2.txt >file3.txt >file4.txt", Command{"cat", []string{}, []string{"<file2.txt", ">file4.txt"}, "file1.txt", "file3.txt", false}},
+		{"cat <file1.txt <file2.txt >file3.txt >file4.txt", Command{"cat", []string{"<file2.txt", ">file4.txt"}, []string{}, "file1.txt", "file3.txt", false}},
 
-		{"ls -l >output.txt &", Command{"ls", []string{"l"}, []string{}, "", "output.txt", true}},
-		{"ls -l & >output.txt", Command{"ls", []string{"l"}, []string{}, "", "output.txt", true}},
+		{"ls -l >output.txt &", Command{"ls", []string{}, []string{"l"}, "", "output.txt", true}},
+		{"ls -l & >output.txt", Command{"ls", []string{}, []string{"l"}, "", "output.txt", true}},
 
-		{"pwd - < >", Command{"pwd", []string{}, []string{"-"}, ">", "", false}},
-		{`pwd - "<" ">"`, Command{"pwd", []string{}, []string{"-", "<", ">"}, "", "", false}},
+		{"pwd - < >", Command{"pwd", []string{"-"}, []string{}, ">", "", false}},
+		{`pwd - "<" ">"`, Command{"pwd", []string{"-", "<", ">"}, []string{}, "", "", false}},
 
-		{"ls < in.txt > out.txt < in2.txt > out2.txt", Command{"ls", []string{}, []string{"<", "in2.txt", ">", "out2.txt"}, "in.txt", "out.txt", false}},
+		{"ls < in.txt > out.txt < in2.txt > out2.txt", Command{"ls", []string{"<", "in2.txt", ">", "out2.txt"}, []string{}, "in.txt", "out.txt", false}},
 		{"ls < in.txt >", Command{"ls", []string{}, []string{}, "in.txt", "", false}},
 	}
 
@@ -163,7 +163,7 @@ func testingParse(t *testing.T, text string, expectedResult []Command, expectedE
 	result, err := Parse(text)
 	if err != nil {
 		if !errors.Is(err, expectedErr) {
-			t.Errorf("Expected %v, but got: %w.\n", expectedErr, err)
+			t.Errorf("Expected %v, but got: %v.\n", expectedErr, err)
 			return
 		}
 		if result != nil {
@@ -191,26 +191,26 @@ func TestParse(t *testing.T) {
 		{"exit", []Command{newCommand("exit", []string{}, []string{})}, nil},
 		{`ls -l | cat file1.txt "file 2.txt"`,
 			[]Command{
-				newCommand("ls", []string{"l"}, []string{}),
-				newCommand("cat", []string{}, []string{"file1.txt", "file 2.txt"}),
+				newCommand("ls", []string{}, []string{"l"}),
+				newCommand("cat", []string{"file1.txt", "file 2.txt"}, []string{}),
 			},
 			nil},
 		{`ls -l | cat file1.txt "file 2.txt" >"file 3.txt"`,
 			[]Command{
-				newCommand("ls", []string{"l"}, []string{}),
-				{"cat", []string{}, []string{"file1.txt", "file 2.txt"}, "", "file 3.txt", false},
+				newCommand("ls", []string{}, []string{"l"}),
+				{"cat", []string{"file1.txt", "file 2.txt"}, []string{}, "", "file 3.txt", false},
 			},
 			nil},
 		{`c1 "|" |c2 | c3`,
 			[]Command{
-				newCommand("c1", []string{}, []string{"|"}),
+				newCommand("c1", []string{"|"}, []string{}),
 				newCommand("c2", []string{}, []string{}),
 				newCommand("c3", []string{}, []string{}),
 			},
 			nil},
 		{`c1 "|" |c2 & | c3`,
 			[]Command{
-				newCommand("c1", []string{}, []string{"|"}),
+				newCommand("c1", []string{"|"}, []string{}),
 				{"c2", []string{}, []string{}, "", "", true},
 				newCommand("c3", []string{}, []string{}),
 			},
@@ -230,5 +230,5 @@ func ExampleParse() {
 	parsedCommand, _ := Parse("ls -l &\n")
 	fmt.Println(commandsToString(parsedCommand))
 	// Output:
-	// ls [ l ] [ ] stdin stdout background run
+	// ls [ ] [ l ] stdin stdout background run
 }

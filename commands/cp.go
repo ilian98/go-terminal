@@ -20,7 +20,8 @@ var (
 
 // Cp is a structure for cp command, implementing ExecuteCommand interface
 type Cp struct {
-	path string
+	path          string
+	stopExecution chan struct{}
 }
 
 // GetName is a getter for command name
@@ -39,8 +40,26 @@ func (c *Cp) Clone() ExecuteCommand {
 	return &clone
 }
 
+// StopSignal is a method for registering stop signal of the execution of the command
+// It writes to stopExecution channel
+func (c *Cp) StopSignal() {
+	c.stopExecution <- struct{}{}
+}
+
+// IsStopSignal is a method for checking if stop signal was sent
+// It checks if there is a signal in stopExecution channel
+func (c *Cp) IsStopSignal() bool {
+	select {
+	case <-c.stopExecution:
+		return true
+	default:
+		return false
+	}
+}
+
 // Execute is go implementation of cp command
-func (c *Cp) Execute(cp *CommandProperties) error {
+func (c *Cp) Execute(cp CommandProperties) error {
+	c.stopExecution = make(chan struct{}, 1)
 	c.path = cp.Path
 
 	if len(cp.Arguments) != 2 {

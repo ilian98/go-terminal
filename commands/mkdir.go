@@ -16,7 +16,8 @@ var (
 
 // Mkdir is a structure for mkdir command, implementing ExecuteCommand interface
 type Mkdir struct {
-	path string
+	path          string
+	stopExecution chan struct{}
 }
 
 // GetName is a getter for command name
@@ -35,8 +36,26 @@ func (m *Mkdir) Clone() ExecuteCommand {
 	return &clone
 }
 
+// StopSignal is a method for registering stop signal of the execution of the command
+// It writes to stopExecution channel
+func (m *Mkdir) StopSignal() {
+	m.stopExecution <- struct{}{}
+}
+
+// IsStopSignal is a method for checking if stop signal was sent
+// It checks if there is a signal in stopExecution channel
+func (m *Mkdir) IsStopSignal() bool {
+	select {
+	case <-m.stopExecution:
+		return true
+	default:
+		return false
+	}
+}
+
 // Execute is go implementation of mkdir command
-func (m *Mkdir) Execute(cp *CommandProperties) error {
+func (m *Mkdir) Execute(cp CommandProperties) error {
+	m.stopExecution = make(chan struct{}, 1)
 	m.path = cp.Path
 
 	if len(cp.Arguments) == 0 {

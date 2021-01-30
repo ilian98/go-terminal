@@ -8,7 +8,8 @@ import (
 
 // Ls is a structure for ls command, implementing ExecuteCommand interface
 type Ls struct {
-	path string
+	path          string
+	stopExecution chan struct{}
 }
 
 // GetName is a getter for command name
@@ -27,8 +28,26 @@ func (l *Ls) Clone() ExecuteCommand {
 	return &clone
 }
 
+// StopSignal is a method for registering stop signal of the execution of the command
+// It writes to stopExecution channel
+func (l *Ls) StopSignal() {
+	l.stopExecution <- struct{}{}
+}
+
+// IsStopSignal is a method for checking if stop signal was sent
+// It checks if there is a signal in stopExecution channel
+func (l *Ls) IsStopSignal() bool {
+	select {
+	case <-l.stopExecution:
+		return true
+	default:
+		return false
+	}
+}
+
 // Execute is go implementation of ls command
-func (l *Ls) Execute(cp *CommandProperties) error {
+func (l *Ls) Execute(cp CommandProperties) error {
+	l.stopExecution = make(chan struct{}, 1)
 	l.path = cp.Path
 	_, outputFile := cp.InputFile, cp.OutputFile
 
@@ -50,9 +69,9 @@ func (l *Ls) Execute(cp *CommandProperties) error {
 	}
 	if lOption == false {
 		for _, file := range files {
-			outputFile.WriteString(file.Name())
+			checkWrite(l, outputFile, file.Name())
 			if file.IsDir() {
-				outputFile.WriteString(string(os.PathSeparator))
+				checkWrite(l, outputFile, string(os.PathSeparator))
 			}
 			outputFile.WriteString("    ")
 		}
@@ -66,24 +85,24 @@ func (l *Ls) Execute(cp *CommandProperties) error {
 		}
 	}
 	for _, file := range files {
-		outputFile.WriteString(file.Mode().String())
-		outputFile.WriteString(" ")
+		checkWrite(l, outputFile, file.Mode().String())
+		checkWrite(l, outputFile, " ")
 
 		fileSize := strconv.Itoa(int(file.Size()))
 		for i := 0; i < (maxNumberOfDigs - len(fileSize)); i++ {
-			outputFile.WriteString(" ")
+			checkWrite(l, outputFile, " ")
 		}
-		outputFile.WriteString(strconv.Itoa(int(file.Size())))
+		checkWrite(l, outputFile, strconv.Itoa(int(file.Size())))
 
-		outputFile.WriteString(" ")
-		outputFile.WriteString(outputTime(file.ModTime()))
-		outputFile.WriteString(" ")
+		checkWrite(l, outputFile, " ")
+		checkWrite(l, outputFile, outputTime(file.ModTime()))
+		checkWrite(l, outputFile, " ")
 
-		outputFile.WriteString(file.Name())
+		checkWrite(l, outputFile, file.Name())
 		if file.IsDir() {
-			outputFile.WriteString(string(os.PathSeparator))
+			checkWrite(l, outputFile, string(os.PathSeparator))
 		}
-		outputFile.WriteString("\n")
+		checkWrite(l, outputFile, "\n")
 	}
 
 	return nil

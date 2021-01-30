@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func testingCd(t *testing.T, cp *CommandProperties, expectedResult string, expectedErr error) {
+func testingCd(t *testing.T, cp CommandProperties, expectedResult string, expectedErr error) {
 	cd := Cd{}
 	err := cd.Execute(cp)
 	if err != nil {
@@ -36,7 +36,7 @@ func TestCd(t *testing.T) {
 	}
 
 	var tests = []struct {
-		cp     *CommandProperties
+		cp     CommandProperties
 		result string
 		err    error
 	}{

@@ -13,7 +13,7 @@ func TestPwd(t *testing.T) {
 
 	testPath := "testPwd"
 	pwd := Pwd{}
-	if err := pwd.Execute(&CommandProperties{testPath, []string{}, []string{}, os.Stdin, w, make(chan struct{}, 1)}); err != nil {
+	if err := pwd.Execute(CommandProperties{testPath, []string{}, []string{}, os.Stdin, w}); err != nil {
 		t.Error("Expecting no error from Pwd function\n")
 	}
 

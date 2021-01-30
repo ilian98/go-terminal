@@ -16,7 +16,8 @@ var (
 
 // Find is a structure for pwd command, implementing ExecuteCommand interface
 type Find struct {
-	path string
+	path          string
+	stopExecution chan struct{}
 }
 
 // GetName is a getter for command name
@@ -35,8 +36,26 @@ func (f *Find) Clone() ExecuteCommand {
 	return &clone
 }
 
-// Execute is go implementation of pwd command
-func (f *Find) Execute(cp *CommandProperties) error {
+// StopSignal is a method for registering stop signal of the execution of the command
+// It writes to stopExecution channel
+func (f *Find) StopSignal() {
+	f.stopExecution <- struct{}{}
+}
+
+// IsStopSignal is a method for checking if stop signal was sent
+// It checks if there is a signal in stopExecution channel
+func (f *Find) IsStopSignal() bool {
+	select {
+	case <-f.stopExecution:
+		return true
+	default:
+		return false
+	}
+}
+
+// Execute is go implementation of find command
+func (f *Find) Execute(cp CommandProperties) error {
+	f.stopExecution = make(chan struct{}, 1)
 	f.path = cp.Path
 	_, outputFile := cp.InputFile, cp.OutputFile
 
@@ -52,7 +71,7 @@ func (f *Find) Execute(cp *CommandProperties) error {
 			}
 			s := strings.Split(path, string(os.PathSeparator))
 			if len(s) > 0 && s[len(s)-1] == argument {
-				if err := cp.checkWrite(outputFile, argument+" found - "+path+"\n"); err != nil {
+				if err := checkWrite(f, outputFile, argument+" found - "+path+"\n"); err != nil {
 					return err
 				}
 				return ErrFindFound
@@ -60,7 +79,7 @@ func (f *Find) Execute(cp *CommandProperties) error {
 			return nil
 		})
 		if err == nil {
-			if err := cp.checkWrite(outputFile, argument+" not found\n"); err != nil {
+			if err := checkWrite(f, outputFile, argument+" not found\n"); err != nil {
 				return err
 			}
 		} else if err != ErrFindFound {

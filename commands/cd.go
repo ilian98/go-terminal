@@ -18,7 +18,8 @@ var (
 
 // Cd is a structure for cd command, implementing ExecuteCommand interface
 type Cd struct {
-	path string
+	path          string
+	stopExecution chan struct{}
 }
 
 // GetName is a getter for command name
@@ -37,8 +38,26 @@ func (c *Cd) Clone() ExecuteCommand {
 	return &clone
 }
 
+// StopSignal is a method for registering stop signal of the execution of the command
+// It writes to stopExecution channel
+func (c *Cd) StopSignal() {
+	c.stopExecution <- struct{}{}
+}
+
+// IsStopSignal is a method for checking if stop signal was sent
+// It checks if there is a signal in stopExecution channel
+func (c *Cd) IsStopSignal() bool {
+	select {
+	case <-c.stopExecution:
+		return true
+	default:
+		return false
+	}
+}
+
 // Execute is go implementation of cd command
-func (c *Cd) Execute(cp *CommandProperties) error {
+func (c *Cd) Execute(cp CommandProperties) error {
+	c.stopExecution = make(chan struct{}, 1)
 	c.path = cp.Path
 
 	if len(cp.Arguments) == 0 {

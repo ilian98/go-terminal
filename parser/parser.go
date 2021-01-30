@@ -13,8 +13,8 @@ import (
 // Command is used for storing the properties of the inputted command after parsing
 type Command struct {
 	Name      string
-	Options   []string
 	Arguments []string
+	Options   []string
 	Input     string // Empty Input would mean that we will use stdin for the command, otherwise it would be the name of the input file
 	Output    string // Analogous to Input
 	BgRun     bool

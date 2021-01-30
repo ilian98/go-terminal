@@ -1,3 +1,12 @@
+// Package interpreter package interpretes command based on its properties and runs it.
+// This is the most important package and can be run almost independentely from the other packages.
+// Only InterpretCommand has parameter of struct parser.Command and main struct Interpreter has a field that is slice of interface commands.ExecuteCommand.
+//
+// Method InterpretCommand should be called with parse information of command stored by package parser.
+// Then it makes a potential pipe of commands each of which is executed with method ExecuteCommand.
+//
+// Method ExecuteCommand only has information about the command that should be executed with any command that is already registered.
+// Methods RegisterExitCommand and RegisterCommand are for registering new commands in the interpreter.
 package interpreter
 
 import (
@@ -28,7 +37,7 @@ var (
 // RegisterExitCommand is a method of Interpreter that can be used to add new name in exitCommands
 func (i *Interpreter) RegisterExitCommand(name string) error {
 	if res, _ := i.checkForCommand(i.exitCommands, name); res == true {
-		return ErrCommandExists
+		return fmt.Errorf("%s - %w", name, ErrCommandExists)
 	}
 	i.exitCommands = append(i.exitCommands, name)
 	return nil
@@ -38,7 +47,7 @@ func (i *Interpreter) RegisterExitCommand(name string) error {
 func (i *Interpreter) RegisterCommand(c commands.ExecuteCommand) error {
 	name := c.GetName()
 	if res, _ := i.checkForCommand(i.shellCommandsName, name); res == true {
-		return ErrCommandExists
+		return fmt.Errorf("%s - %w", name, ErrCommandExists)
 	}
 	i.shellCommandsName = append(i.shellCommandsName, name)
 	i.shellCommands = append(i.shellCommands, c)
@@ -47,7 +56,8 @@ func (i *Interpreter) RegisterCommand(c commands.ExecuteCommand) error {
 
 // These constants are used for the status of method ExecutedCommand
 const (
-	InvalidCode = -1
+	// CmdInterrupted indicates that the execution of the command was interrupted by Ctrl+C
+	CmdInterrupted = -1
 	// Ok indicates that there were no errors excluding errors from executed command
 	Ok = iota
 	// ExitCommand indicates that the command is for exiting the terminal
@@ -56,63 +66,66 @@ const (
 	InvalidCommandName
 )
 
-// ExecuteCommand is a method of Interpreter that executes command given command information after parsing and input and output files which could be stdin and stdout
-func (i *Interpreter) ExecuteCommand(parsedCommand parser.Command, inputFile *os.File, outputFile *os.File) int {
+// ExecuteCommand is a method of Interpreter that executes one command given sufficient information after interpreting parsed command.
+//
+// This method can run the command in background mode if in the parameters bgRun is true.
+// Also this method can catch os.Interrupt and alters its default behaviour.
+// After the catch, it sends signal to the command that is currently running by writing to its StopExecution channel and then exits the current go routine to call the defer calls closing the opened files!
+func (i *Interpreter) ExecuteCommand(name string, arguments []string, options []string, inputFile *os.File, outputFile *os.File, bgRun bool) int {
 	// check if command is for exiting the terminal
-	if result, _ := i.checkForCommand(i.exitCommands, parsedCommand.Name); result == true {
+	if result, _ := i.checkForCommand(i.exitCommands, name); result == true {
 		closeInputOutputFiles(inputFile, outputFile)
 		return ExitCommand
 	}
 	// check if command with the parsed name exists
-	result, ind := i.checkForCommand(i.shellCommandsName, parsedCommand.Name)
+	result, ind := i.checkForCommand(i.shellCommandsName, name)
 	if result == false {
 		closeInputOutputFiles(inputFile, outputFile)
 		return InvalidCommandName
 	}
 
+	// Transform command information to element of struct commands.CommandProperties passed by reference to Execute method of command
 	cp := commands.CommandProperties{
-		Path:          i.Path,
-		Arguments:     parsedCommand.Arguments,
-		Options:       parsedCommand.Options,
-		InputFile:     inputFile,
-		OutputFile:    outputFile,
-		StopExecution: make(chan struct{}, 1),
+		Path:       i.Path,
+		Arguments:  arguments,
+		Options:    options,
+		InputFile:  inputFile,
+		OutputFile: outputFile,
 	}
 
-	command := i.shellCommands[ind].Clone()
-	runCommand := func(cp *commands.CommandProperties, bgRun bool) {
-		defer closeInputOutputFiles(inputFile, outputFile)
+	command := i.shellCommands[ind].Clone() // we are cloning command so that it runs clean i.e. in initial state
+	runCommand := func(cp commands.CommandProperties, bgRun bool) {
+		defer closeInputOutputFiles(inputFile, outputFile) // when function ends, then the command stopped and we have to close the opened files
 
-		result := make(chan error, 1)
-		c := make(chan os.Signal, 1)
-		go func() {
-			result <- command.Execute(cp)
-		}()
-
-		if bgRun == false {
-			signal.Notify(c, os.Interrupt)
+		if bgRun == false { // if we are not in background mode, we should catch Ctrl+C
+			result := make(chan error, 1) // we make a channel for waiting result
+			signalInterrupt := make(chan os.Signal, 1)
+			go func() { // we run the command in new go routine to be able to catch os.Intterupt in current go routine
+				result <- command.Execute(cp)
+			}()
+			signal.Notify(signalInterrupt, os.Interrupt)
 			select {
-			case <-c:
-				cp.StopExecution <- struct{}{} // we send stop signal to executing command
-				runtime.Goexit()               // we stop current goroutine
+			case <-signalInterrupt:
+				command.StopSignal() // we send stop signal to executing command
+				runtime.Goexit()     // we stop current goroutine
 			case err := <-result:
 				if err != nil {
 					fmt.Printf("%v\n", err)
 				}
 			}
-		} else { // in bg mode we don't catch Ctrl+C
-			err := <-result
+		} else { // in background mode we don't catch Ctrl+C
+			err := command.Execute(cp)
 			if err != nil {
 				fmt.Printf("%v\n", err)
 			}
 		}
 	}
 
-	if parsedCommand.BgRun == true {
-		go runCommand(&cp, parsedCommand.BgRun)
+	if bgRun == true {
+		go runCommand(cp, bgRun)
 	} else {
-		runCommand(&cp, parsedCommand.BgRun)
-		i.Path = command.GetPath() // path changed only when command is not run in bg mode
+		runCommand(cp, bgRun)
+		i.Path = command.GetPath() // path changed only when command is not run in background mode
 	}
 
 	return Ok
@@ -124,7 +137,7 @@ type Status struct {
 	Command string
 }
 
-// InterpretCommand is a method of Interpreter that interpretes parsed command and executes command
+// InterpretCommand is a method of Interpreter that interpretes parsed command and executes commands
 func (i *Interpreter) InterpretCommand(parsedCommand []parser.Command) []Status {
 	type pipe struct {
 		r *os.File
@@ -184,15 +197,17 @@ func (i *Interpreter) InterpretCommand(parsedCommand []parser.Command) []Status 
 		}
 
 		go func(currInterpreter Interpreter, c parser.Command, inputFile *os.File, outputFile *os.File) {
-			s := Status{InvalidCode, c.Name}
+			s := Status{CmdInterrupted, c.Name}
 			defer func(s *Status) {
-				if s.Code == InvalidCode { // if code is Invalid, then the go routine was interrupted
+				if s.Code == CmdInterrupted { // if code is Invalid, then the go routine was interrupted
 					s.Code = Ok
 					statuses <- *s
 				}
 			}(&s)
 
-			s = Status{currInterpreter.ExecuteCommand(c, inputFile, outputFile), c.Name}
+			s = Status{currInterpreter.ExecuteCommand(
+				c.Name, c.Arguments, c.Options, inputFile, outputFile, c.BgRun,
+			), c.Name}
 			statuses <- s
 			if !isPipe && c.BgRun == false { // path can be changed only for one command not in pipe and bg run
 				i.Path = currInterpreter.Path // we don't have concurrent access to i.Path because it isn't pipe
