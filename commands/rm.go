@@ -40,7 +40,7 @@ func (r *Rm) Clone() ExecuteCommand {
 }
 
 // Execute is go implementation of rm command
-func (r *Rm) Execute(cp CommandProperties) error {
+func (r *Rm) Execute(cp *CommandProperties) error {
 	r.path = cp.Path
 
 	if len(cp.Arguments) == 0 {

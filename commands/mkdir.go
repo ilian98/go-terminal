@@ -36,7 +36,7 @@ func (m *Mkdir) Clone() ExecuteCommand {
 }
 
 // Execute is go implementation of mkdir command
-func (m *Mkdir) Execute(cp CommandProperties) error {
+func (m *Mkdir) Execute(cp *CommandProperties) error {
 	m.path = cp.Path
 
 	if len(cp.Arguments) == 0 {

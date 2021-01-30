@@ -22,11 +22,11 @@ func (p *Pwd) Clone() ExecuteCommand {
 }
 
 // Execute is go implementation of pwd command
-func (p *Pwd) Execute(cp CommandProperties) error {
+func (p *Pwd) Execute(cp *CommandProperties) error {
 	p.path = cp.Path
 	_, outputFile := cp.InputFile, cp.OutputFile
 
-	if err := checkWrite(outputFile, p.path); err != nil {
+	if err := cp.checkWrite(outputFile, p.path); err != nil {
 		return err
 	}
 

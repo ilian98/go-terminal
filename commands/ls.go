@@ -28,7 +28,7 @@ func (l *Ls) Clone() ExecuteCommand {
 }
 
 // Execute is go implementation of ls command
-func (l *Ls) Execute(cp CommandProperties) error {
+func (l *Ls) Execute(cp *CommandProperties) error {
 	l.path = cp.Path
 	_, outputFile := cp.InputFile, cp.OutputFile
 

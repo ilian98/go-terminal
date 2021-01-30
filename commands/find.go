@@ -36,7 +36,7 @@ func (f *Find) Clone() ExecuteCommand {
 }
 
 // Execute is go implementation of pwd command
-func (f *Find) Execute(cp CommandProperties) error {
+func (f *Find) Execute(cp *CommandProperties) error {
 	f.path = cp.Path
 	_, outputFile := cp.InputFile, cp.OutputFile
 
@@ -52,7 +52,7 @@ func (f *Find) Execute(cp CommandProperties) error {
 			}
 			s := strings.Split(path, string(os.PathSeparator))
 			if len(s) > 0 && s[len(s)-1] == argument {
-				if err := checkWrite(outputFile, argument+" found - "+path+"\n"); err != nil {
+				if err := cp.checkWrite(outputFile, argument+" found - "+path+"\n"); err != nil {
 					return err
 				}
 				return ErrFindFound
@@ -60,7 +60,7 @@ func (f *Find) Execute(cp CommandProperties) error {
 			return nil
 		})
 		if err == nil {
-			if err := checkWrite(outputFile, argument+" not found\n"); err != nil {
+			if err := cp.checkWrite(outputFile, argument+" not found\n"); err != nil {
 				return err
 			}
 		} else if err != ErrFindFound {

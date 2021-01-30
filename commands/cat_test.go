@@ -22,7 +22,7 @@ func testingCat(t *testing.T, inputText string, arguments []string, expectedResu
 	}
 	inputW.Close()
 	cat := Cat{}
-	if err := cat.Execute(CommandProperties{"test/path", arguments, []string{}, inputR, outputW}); err != nil {
+	if err := cat.Execute(&CommandProperties{"test/path", arguments, []string{}, inputR, outputW, make(chan struct{}, 1)}); err != nil {
 		if expectedErr == "" {
 			t.Errorf("Expected no error, but got: %v", err)
 		} else if err.Error() != expectedErr {
@@ -72,7 +72,7 @@ func ExampleCat_Execute() {
 	file.Close()
 
 	cat := Cat{}
-	cat.Execute(CommandProperties{path, []string{"example-file"}, []string{}, os.Stdin, os.Stdout})
+	cat.Execute(newCp(path, []string{"example-file"}, []string{}))
 	// Output:
 	// cat command example
 }

@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"os"
 	"strconv"
 	"time"
 )
@@ -49,7 +48,7 @@ const (
 )
 
 // Execute is go implementation of ping command
-func (p *Ping) Execute(cp CommandProperties) error {
+func (p *Ping) Execute(cp *CommandProperties) error {
 	p.path = cp.Path
 	_, outputFile := cp.InputFile, cp.OutputFile
 
@@ -60,13 +59,13 @@ func (p *Ping) Execute(cp CommandProperties) error {
 	p.host = cp.Arguments[0]
 	port := "80"
 
-	if err := checkWrite(outputFile, "Pinging "+p.host); err != nil {
+	if err := cp.checkWrite(outputFile, "Pinging "+p.host); err != nil {
 		return err
 	}
 
 	outputIP := func(connection net.Conn) error {
 		address := connection.RemoteAddr().String()
-		if err := checkWrite(outputFile, " ["+address+"]\n"); err != nil {
+		if err := cp.checkWrite(outputFile, " ["+address+"]\n"); err != nil {
 			return err
 		}
 		return nil
@@ -97,7 +96,7 @@ func (p *Ping) Execute(cp CommandProperties) error {
 						return err
 					}
 				}
-				if err := checkWrite(outputFile, "\n"); err != nil {
+				if err := cp.checkWrite(outputFile, "\n"); err != nil {
 					return err
 				}
 				return fmt.Errorf("%v, %w", result.error, ErrPingDial)
@@ -107,12 +106,12 @@ func (p *Ping) Execute(cp CommandProperties) error {
 			}
 		case <-time.After(DefaultTimeOut):
 			if i == 0 {
-				if err := checkWrite(outputFile, "\n"); err != nil {
+				if err := cp.checkWrite(outputFile, "\n"); err != nil {
 					return err
 				}
 
 			}
-			if err := checkWrite(outputFile, "Request timed out.\n"); err != nil {
+			if err := cp.checkWrite(outputFile, "Request timed out.\n"); err != nil {
 				return err
 			}
 		}
@@ -124,7 +123,7 @@ func (p *Ping) Execute(cp CommandProperties) error {
 				}
 			}
 			time := endTime.Sub(startTime)
-			if err := checkWrite(outputFile, "Reply from "+p.connection.RemoteAddr().String()+
+			if err := cp.checkWrite(outputFile, "Reply from "+p.connection.RemoteAddr().String()+
 				": time = "+time.String()+"\n"); err != nil {
 				return err
 			}
@@ -132,52 +131,53 @@ func (p *Ping) Execute(cp CommandProperties) error {
 		}
 	}
 
-	if err := p.outputStatistics(outputFile, len(times), times); err != nil {
+	if err := p.outputStatistics(cp, len(times), times); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (p *Ping) outputStatistics(outputFile *os.File, cntReceived int, times []time.Duration) error {
-	if err := checkWrite(outputFile, "Ping statistics for "); err != nil {
+func (p *Ping) outputStatistics(cp *CommandProperties, cntReceived int, times []time.Duration) error {
+	outputFile := cp.OutputFile
+	if err := cp.checkWrite(outputFile, "Ping statistics for "); err != nil {
 		return err
 	}
 	if p.connection != nil {
-		if err := checkWrite(outputFile, p.connection.RemoteAddr().String()+":\n"); err != nil {
+		if err := cp.checkWrite(outputFile, p.connection.RemoteAddr().String()+":\n"); err != nil {
 			return err
 		}
 	} else {
-		if err := checkWrite(outputFile, p.host+":\n"); err != nil {
+		if err := cp.checkWrite(outputFile, p.host+":\n"); err != nil {
 			return err
 		}
 	}
 	lost := PingRepetitions - cntReceived
-	if err := checkWrite(outputFile, "    Packets: Sent = "+strconv.Itoa(PingRepetitions)); err != nil {
+	if err := cp.checkWrite(outputFile, "    Packets: Sent = "+strconv.Itoa(PingRepetitions)); err != nil {
 		return err
 	}
-	if err := checkWrite(outputFile, ", Received = "+strconv.Itoa(cntReceived)); err != nil {
+	if err := cp.checkWrite(outputFile, ", Received = "+strconv.Itoa(cntReceived)); err != nil {
 		return err
 	}
-	if err := checkWrite(outputFile, ", Lost = "+strconv.Itoa(lost)); err != nil {
+	if err := cp.checkWrite(outputFile, ", Lost = "+strconv.Itoa(lost)); err != nil {
 		return err
 	}
-	if err := checkWrite(outputFile, " ("+strconv.Itoa(lost*100/PingRepetitions)+"% loss)\n"); err != nil {
+	if err := cp.checkWrite(outputFile, " ("+strconv.Itoa(lost*100/PingRepetitions)+"% loss)\n"); err != nil {
 		return err
 	}
 
 	if cntReceived == 0 {
 		return nil
 	}
-	if err := checkWrite(outputFile, "Approximate round trip times in milli-seconds:\n"); err != nil {
+	if err := cp.checkWrite(outputFile, "Approximate round trip times in milli-seconds:\n"); err != nil {
 		return err
 	}
-	if err := checkWrite(outputFile, "    Minimum = "+minimumTime(times).String()); err != nil {
+	if err := cp.checkWrite(outputFile, "    Minimum = "+minimumTime(times).String()); err != nil {
 		return err
 	}
-	if err := checkWrite(outputFile, ", Maximum = "+maximumTime(times).String()); err != nil {
+	if err := cp.checkWrite(outputFile, ", Maximum = "+maximumTime(times).String()); err != nil {
 		return err
 	}
-	if err := checkWrite(outputFile, ", Average = "+averageTime(times).String()); err != nil {
+	if err := cp.checkWrite(outputFile, ", Average = "+averageTime(times).String()); err != nil {
 		return err
 	}
 

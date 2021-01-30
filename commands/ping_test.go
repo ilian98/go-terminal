@@ -15,7 +15,7 @@ func testingPing(t *testing.T, arguments []string, expectedResult string, expect
 	}
 
 	ping := Ping{}
-	errPing := ping.Execute(CommandProperties{"", arguments, []string{""}, os.Stdin, w})
+	errPing := ping.Execute(&CommandProperties{"", arguments, []string{""}, os.Stdin, w, make(chan struct{}, 1)})
 
 	takeResult := func() string {
 		output := make([]byte, 1<<10)

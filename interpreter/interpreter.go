@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/signal"
 	"runtime"
 
 	"github.com/ilian98/go-terminal/commands"
@@ -70,24 +71,37 @@ func (i *Interpreter) ExecuteCommand(parsedCommand parser.Command, inputFile *os
 	}
 
 	cp := commands.CommandProperties{
-		Path:       i.Path,
-		Arguments:  parsedCommand.Arguments,
-		Options:    parsedCommand.Options,
-		InputFile:  inputFile,
-		OutputFile: outputFile,
+		Path:          i.Path,
+		Arguments:     parsedCommand.Arguments,
+		Options:       parsedCommand.Options,
+		InputFile:     inputFile,
+		OutputFile:    outputFile,
+		StopExecution: make(chan struct{}, 1),
 	}
 
 	command := i.shellCommands[ind].Clone()
-	runCommand := func() {
+	runCommand := func(cp *commands.CommandProperties, bgRun bool) {
 		defer closeInputOutputFiles(inputFile, outputFile)
+
 		result := make(chan error, 1)
+		c := make(chan os.Signal, 1)
 		go func() {
 			result <- command.Execute(cp)
 		}()
-		select {
-		case <-(*i.StopSignal):
-			runtime.Goexit() // we stop current goroutine, there is no easy way to stop the running function
-		case err := <-result:
+
+		if bgRun == false {
+			signal.Notify(c, os.Interrupt)
+			select {
+			case <-c:
+				cp.StopExecution <- struct{}{} // we send stop signal to executing command
+				runtime.Goexit()               // we stop current goroutine
+			case err := <-result:
+				if err != nil {
+					fmt.Printf("%v\n", err)
+				}
+			}
+		} else { // in bg mode we don't catch Ctrl+C
+			err := <-result
 			if err != nil {
 				fmt.Printf("%v\n", err)
 			}
@@ -95,9 +109,9 @@ func (i *Interpreter) ExecuteCommand(parsedCommand parser.Command, inputFile *os
 	}
 
 	if parsedCommand.BgRun == true {
-		go runCommand()
+		go runCommand(&cp, parsedCommand.BgRun)
 	} else {
-		runCommand()
+		runCommand(&cp, parsedCommand.BgRun)
 		i.Path = command.GetPath() // path changed only when command is not run in bg mode
 	}
 
@@ -172,7 +186,7 @@ func (i *Interpreter) InterpretCommand(parsedCommand []parser.Command) []Status 
 		go func(currInterpreter Interpreter, c parser.Command, inputFile *os.File, outputFile *os.File) {
 			s := Status{InvalidCode, c.Name}
 			defer func(s *Status) {
-				if s.Code == InvalidCode { // if code is Invalid, then the go routine was interupted
+				if s.Code == InvalidCode { // if code is Invalid, then the go routine was interrupted
 					s.Code = Ok
 					statuses <- *s
 				}
@@ -190,6 +204,7 @@ func (i *Interpreter) InterpretCommand(parsedCommand []parser.Command) []Status 
 	for i := 0; i < len(parsedCommand); i++ {
 		result = append(result, <-statuses)
 	}
+	signal.Reset(os.Interrupt) // we remove sending to channels when all results returned
 	return result
 }
 

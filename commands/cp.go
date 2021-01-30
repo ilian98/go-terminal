@@ -40,7 +40,7 @@ func (c *Cp) Clone() ExecuteCommand {
 }
 
 // Execute is go implementation of cp command
-func (c *Cp) Execute(cp CommandProperties) error {
+func (c *Cp) Execute(cp *CommandProperties) error {
 	c.path = cp.Path
 
 	if len(cp.Arguments) != 2 {

@@ -32,7 +32,7 @@ func TestLs(t *testing.T) {
 	}
 
 	ls := Ls{}
-	if err := ls.Execute(CommandProperties{path, []string{}, []string{"l"}, os.Stdin, w}); err != nil {
+	if err := ls.Execute(&CommandProperties{path, []string{}, []string{"l"}, os.Stdin, w, make(chan struct{})}); err != nil {
 		t.Errorf("Expecting no error from Ls function, but got: %w\n", err)
 		return
 	}
@@ -77,7 +77,7 @@ func ExampleLs_Execute() {
 	}()
 
 	ls := Ls{}
-	ls.Execute(CommandProperties{path, []string{}, []string{}, os.Stdin, os.Stdout})
+	ls.Execute(newCp(path, []string{}, []string{}))
 	// Output:
 	// new-file
 }

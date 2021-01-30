@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func testingCd(t *testing.T, cp CommandProperties, expectedResult string, expectedErr error) {
+func testingCd(t *testing.T, cp *CommandProperties, expectedResult string, expectedErr error) {
 	cd := Cd{}
 	err := cd.Execute(cp)
 	if err != nil {
@@ -36,14 +36,14 @@ func TestCd(t *testing.T) {
 	}
 
 	var tests = []struct {
-		cp     CommandProperties
+		cp     *CommandProperties
 		result string
 		err    error
 	}{
-		{CommandProperties{testPath, []string{"."}, []string{}, os.Stdin, os.Stdout}, testPath, nil},
-		{CommandProperties{testPath, []string{".."}, []string{}, os.Stdin, os.Stdout}, parentPath, nil},
-		{CommandProperties{testPath, []string{"..", "."}, []string{}, os.Stdin, os.Stdout}, "", ErrCdTooManyArgs},
-		{CommandProperties{testPath, []string{"/not/existing/path"}, []string{}, os.Stdin, os.Stdout}, "", ErrCdPathNotExist},
+		{newCp(testPath, []string{"."}, []string{}), testPath, nil},
+		{newCp(testPath, []string{".."}, []string{}), parentPath, nil},
+		{newCp(testPath, []string{"..", "."}, []string{}), "", ErrCdTooManyArgs},
+		{newCp(testPath, []string{"/not/existing/path"}, []string{}), "", ErrCdPathNotExist},
 	}
 
 	for _, test := range tests {
@@ -55,7 +55,7 @@ func TestCd(t *testing.T) {
 
 func ExampleCd_Execute() {
 	cd := Cd{}
-	cd.Execute(CommandProperties{"", []string{`\`}, []string{}, os.Stdin, os.Stdout})
+	cd.Execute(newCp("", []string{`\`}, []string{}))
 
 	path, _ := os.Getwd()
 	if cd.GetPath() == getRootPath(path) {

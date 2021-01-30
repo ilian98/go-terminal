@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"os/signal"
 
 	"github.com/ilian98/go-terminal/commands"
 	"github.com/ilian98/go-terminal/interpreter"
@@ -39,17 +38,6 @@ func main() {
 		os.Exit(1)
 	}
 	I.Path = path
-	c := make(chan os.Signal)
-	signal.Notify(c, os.Interrupt)
-	go func() {
-		for range c {
-			if I.StopSignal != nil {
-				for i := 1; i <= cap(*I.StopSignal); i++ {
-					(*I.StopSignal) <- struct{}{}
-				}
-			}
-		}
-	}()
 
 	reader := bufio.NewReader(os.Stdin)
 	for {

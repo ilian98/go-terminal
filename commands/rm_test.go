@@ -36,7 +36,7 @@ func testingRm(t *testing.T, fileName string, dirName string, arguments []string
 		t.Fatal("Fatal error - cannot get working directory! - %w", err)
 	}
 	rm := Rm{}
-	errRm := rm.Execute(CommandProperties{wd, arguments, options, os.Stdin, os.Stdout})
+	errRm := rm.Execute(newCp(wd, arguments, options))
 	if errRm == nil {
 		if expectedErr != "" {
 			t.Errorf("Expected error %s, but got no error", expectedErr)
@@ -82,7 +82,7 @@ func ExampleRm_Execute() {
 	file, _ := os.Create(path + string(os.PathSeparator) + "not-existing-file")
 	file.Close()
 	rm := Rm{}
-	rm.Execute(CommandProperties{path, []string{"not-existing-file"}, []string{}, os.Stdin, os.Stdout})
+	rm.Execute(newCp(path, []string{"not-existing-file"}, []string{}))
 
 	if err := os.Remove(path + string(os.PathSeparator) + "not-existing-file"); err != nil {
 		fmt.Println("not-existing-file removed!")

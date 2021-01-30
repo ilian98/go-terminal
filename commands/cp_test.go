@@ -24,7 +24,7 @@ func testingCp(t *testing.T, source string, arguments []string, expectedErr erro
 		t.Fatal("Fatal error - cannot get working directory! - %w", err)
 	}
 	cp := Cp{}
-	errCp := cp.Execute(CommandProperties{path, arguments, []string{}, os.Stdin, os.Stdout})
+	errCp := cp.Execute(newCp(path, arguments, []string{}))
 	if errCp == nil {
 		if expectedErr != nil {
 			t.Errorf("Expected error %v, but got no error", expectedErr)
@@ -68,7 +68,7 @@ func ExampleCp_Execute() {
 	file.Close()
 	defer os.Remove(path + string(os.PathSeparator) + "not-existing-file")
 	cp := Cp{}
-	cp.Execute(CommandProperties{path, []string{"not-existing-file", "copy"}, []string{}, os.Stdin, os.Stdout})
+	cp.Execute(newCp(path, []string{"not-existing-file", "copy"}, []string{}))
 
 	if err := os.Remove(path + string(os.PathSeparator) + "copy"); err == nil {
 		fmt.Println("not-existing-file was copied!")

@@ -39,7 +39,7 @@ func (m *Mv) Clone() ExecuteCommand {
 }
 
 // Execute is go implementation of mv command
-func (m *Mv) Execute(cp CommandProperties) error {
+func (m *Mv) Execute(cp *CommandProperties) error {
 	m.path = cp.Path
 
 	if len(cp.Arguments) != 2 {

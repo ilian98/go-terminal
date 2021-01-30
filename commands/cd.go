@@ -38,7 +38,7 @@ func (c *Cd) Clone() ExecuteCommand {
 }
 
 // Execute is go implementation of cd command
-func (c *Cd) Execute(cp CommandProperties) error {
+func (c *Cd) Execute(cp *CommandProperties) error {
 	c.path = cp.Path
 
 	if len(cp.Arguments) == 0 {

@@ -13,7 +13,7 @@ func TestPwd(t *testing.T) {
 
 	testPath := "testPwd"
 	pwd := Pwd{}
-	if err := pwd.Execute(CommandProperties{testPath, []string{}, []string{}, os.Stdin, w}); err != nil {
+	if err := pwd.Execute(&CommandProperties{testPath, []string{}, []string{}, os.Stdin, w, make(chan struct{}, 1)}); err != nil {
 		t.Error("Expecting no error from Pwd function\n")
 	}
 
@@ -29,7 +29,7 @@ func TestPwd(t *testing.T) {
 
 func ExamplePwd_Execute() {
 	pwd := Pwd{}
-	pwd.Execute(CommandProperties{"Example/Path", []string{}, []string{}, os.Stdin, os.Stdout})
+	pwd.Execute(newCp("Example/Path", []string{}, []string{}))
 	// Output:
 	// Example/Path
 }

@@ -12,7 +12,7 @@ func testingMkdir(t *testing.T, arguments []string, expectedErr string) {
 		t.Fatal("Fatal error - cannot get working directory! - %w", err)
 	}
 	mkdir := Mkdir{}
-	errMkdir := mkdir.Execute(CommandProperties{path, arguments, []string{}, os.Stdin, os.Stdout})
+	errMkdir := mkdir.Execute(newCp(path, arguments, []string{}))
 	defer func() {
 		for _, argument := range arguments {
 			os.RemoveAll(argument)
@@ -53,7 +53,7 @@ func TestMkdir(t *testing.T) {
 func ExampleMkdir_Execute() {
 	path, _ := os.Getwd()
 	mkdir := Mkdir{}
-	mkdir.Execute(CommandProperties{path, []string{"example-mkdir"}, []string{}, os.Stdin, os.Stdout})
+	mkdir.Execute(newCp(path, []string{"example-mkdir"}, []string{}))
 
 	if err := os.RemoveAll(path + string(os.PathSeparator) + "example-mkdir"); err == nil {
 		fmt.Println("example-mkdir directory was created!")

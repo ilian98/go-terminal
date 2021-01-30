@@ -36,19 +36,17 @@ func (c *Cat) Clone() ExecuteCommand {
 }
 
 // Execute is go implementation of cat command
-func (c *Cat) Execute(cp CommandProperties) error {
+func (c *Cat) Execute(cp *CommandProperties) error {
 	c.path = cp.Path
 	inputFile, outputFile := cp.InputFile, cp.OutputFile
 
 	outputFileData := func(file *os.File) error {
 		for {
-			buffer := make([]byte, 1<<4)
-			n, err := file.Read(buffer)
-			if n == 0 {
+			text, err := cp.checkRead(file)
+			if len(text) == 0 {
 				break
 			}
-			text := string(buffer)
-			if err := checkWrite(outputFile, strings.TrimRight(text, "\u0000")); err != nil {
+			if err := cp.checkWrite(outputFile, text); err != nil {
 				return err
 			}
 			if err == io.EOF {

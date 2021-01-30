@@ -24,7 +24,7 @@ func testingMv(t *testing.T, source string, arguments []string, expectedErr erro
 		t.Fatal("Fatal error - cannot get working directory! - %w", err)
 	}
 	mv := Mv{}
-	errMv := mv.Execute(CommandProperties{path, arguments, []string{}, os.Stdin, os.Stdout})
+	errMv := mv.Execute(newCp(path, arguments, []string{}))
 	if errMv == nil {
 		if expectedErr != nil {
 			t.Errorf("Expected error %v, but got no error", expectedErr)
@@ -67,7 +67,7 @@ func ExampleMv_Execute() {
 	file, _ := os.Create(path + string(os.PathSeparator) + "not-existing-file")
 	file.Close()
 	mv := Mv{}
-	mv.Execute(CommandProperties{path, []string{"not-existing-file", "example-mv"}, []string{}, os.Stdin, os.Stdout})
+	mv.Execute(newCp(path, []string{"not-existing-file", "example-mv"}, []string{}))
 
 	if err := os.Remove(path + string(os.PathSeparator) + "example-mv"); err == nil {
 		fmt.Println("not-existing-file was renamed to example-mv!")
