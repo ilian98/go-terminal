@@ -26,7 +26,6 @@ type Interpreter struct {
 	exitCommands      []string
 	shellCommandsName []string
 	shellCommands     []commands.ExecuteCommand
-	StopSignal        *chan struct{}
 }
 
 var (
@@ -131,15 +130,20 @@ func (i *Interpreter) ExecuteCommand(name string, arguments []string, options []
 	return Ok
 }
 
-// Status is struct used for storing code and command name after InterpretCommand
+// Status is a struct used for storing code and command name after InterpretCommand
 type Status struct {
 	Code    int
 	Command string
 }
 
-// InterpretCommand is a method of Interpreter that interpretes parsed command and executes commands
+// InterpretCommand is a method of Interpreter that interpretes parsed command and executes commands.
+// It returns a slice with the statuses returned from method ExecuteCommand for every command
+//
+// If slice parameter length is more than one then a pipe is made.
+// All commands are run in background mode if there is at least one command which should be run in background mode.
+// Otherwise they are run in normal mode.
 func (i *Interpreter) InterpretCommand(parsedCommand []parser.Command) []Status {
-	type pipe struct {
+	type pipe struct { // structure for grouping read and write end of os.Pipe
 		r *os.File
 		w *os.File
 	}
@@ -153,17 +157,15 @@ func (i *Interpreter) InterpretCommand(parsedCommand []parser.Command) []Status 
 	}
 
 	bgRun := false
-	for _, c := range parsedCommand { // we check if the pipe (command) should be run in bg mode
+	for _, c := range parsedCommand { // we check if there is a command that should be run in background mode
 		if c.BgRun == true {
 			bgRun = true
 			break
 		}
 	}
 
-	ch := make(chan struct{}, len(parsedCommand))
-	i.StopSignal = &ch
-	statuses := make(chan Status, len(parsedCommand))
-	origInterpreter := *i // we copy the interpreter to not let path change in pipe
+	statuses := make(chan Status, len(parsedCommand)) // channel for collecting the statuses of ran commands
+	copyInterpreter := *i                             // we copy the interpreter to not let path change in potential pipe
 	isPipe := false
 	if len(parsedCommand) > 1 {
 		isPipe = true
@@ -186,7 +188,7 @@ func (i *Interpreter) InterpretCommand(parsedCommand []parser.Command) []Status 
 
 		c.BgRun = bgRun
 		if c.BgRun == true && inputFile == os.Stdin {
-			// we make sure that command ran in bg mode won't try to read from stdin
+			// we make sure that command ran in background mode won't read from stdin
 			r, w, err := os.Pipe()
 			if err != nil {
 				fmt.Printf("%v\n", err)
@@ -198,8 +200,8 @@ func (i *Interpreter) InterpretCommand(parsedCommand []parser.Command) []Status 
 
 		go func(currInterpreter Interpreter, c parser.Command, inputFile *os.File, outputFile *os.File) {
 			s := Status{CmdInterrupted, c.Name}
-			defer func(s *Status) {
-				if s.Code == CmdInterrupted { // if code is Invalid, then the go routine was interrupted
+			defer func(s *Status) { // we run this function in defer to write code for command if go routine was exited
+				if s.Code == CmdInterrupted { // if code is CmdInterrupted, then the go routine was interrupted
 					s.Code = Ok
 					statuses <- *s
 				}
@@ -212,17 +214,18 @@ func (i *Interpreter) InterpretCommand(parsedCommand []parser.Command) []Status 
 			if !isPipe && c.BgRun == false { // path can be changed only for one command not in pipe and bg run
 				i.Path = currInterpreter.Path // we don't have concurrent access to i.Path because it isn't pipe
 			}
-		}(origInterpreter, c, inputFile, outputFile)
+		}(copyInterpreter, c, inputFile, outputFile)
 	}
 
 	var result []Status
-	for i := 0; i < len(parsedCommand); i++ {
+	for i := 0; i < len(parsedCommand); i++ { // we collect the statuses from the commands
 		result = append(result, <-statuses)
 	}
-	signal.Reset(os.Interrupt) // we remove sending to channels when all results returned
+	signal.Reset(os.Interrupt) // we remove catching Ctrl+C when all results are collected
 	return result
 }
 
+// checkForCommand is function for checking if a command name target is present in slice parameter names
 func (i *Interpreter) checkForCommand(names []string, target string) (bool, int) {
 	for i, name := range names {
 		if name == target {

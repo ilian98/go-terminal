@@ -3,6 +3,7 @@ package interpreter
 import (
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/ilian98/go-terminal/commands"
 	"github.com/ilian98/go-terminal/parser"
@@ -53,6 +54,7 @@ func TestRegisterCommand(t *testing.T) {
 func ExampleInterpreter() {
 	var i Interpreter
 	i.RegisterCommand(&commands.Pwd{})
+	i.RegisterCommand(&commands.Cat{})
 	i.Path = "example/path"
 	i.InterpretCommand([]parser.Command{
 		{
@@ -61,9 +63,19 @@ func ExampleInterpreter() {
 			Options:   []string{},
 			Input:     "",
 			Output:    "",
+			BgRun:     true,
+		},
+		{
+			Name:      "cat",
+			Arguments: []string{},
+			Options:   []string{},
+			Input:     "",
+			Output:    "",
 			BgRun:     false,
 		},
 	})
+
+	time.Sleep(100 * time.Millisecond)
 
 	// Output:
 	// example/path

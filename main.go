@@ -13,7 +13,7 @@ import (
 // I is the interpreter which is used by main to operate with the parsed commands
 var I interpreter.Interpreter
 
-func init() {
+func init() { // registering commands in interpreter
 	for _, exitCommand := range []string{"exit", "logout", "bye"} {
 		if err := I.RegisterExitCommand(exitCommand); err != nil {
 			fmt.Printf("%v\n", err)
@@ -53,13 +53,13 @@ func main() {
 			fmt.Println("Couldn't read command!")
 			continue
 		}
-		parsedCommand, err := parser.Parse(text)
+		parsedCommand, err := parser.Parse(text) // parsing one line
 		if err != nil {
 			fmt.Printf("%v\n", err)
 			continue
 		}
 
-		statuses := I.InterpretCommand(parsedCommand)
+		statuses := I.InterpretCommand(parsedCommand) // colecting statuses after interpreting and running parsedCommand
 		if len(statuses) == 1 && statuses[0].Code == interpreter.ExitCommand {
 			if parsedCommand[0].Name == "bye" {
 				fmt.Println("bye")
