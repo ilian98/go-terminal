@@ -1,7 +1,7 @@
 # go-terminal
-Terminal with basic commands such as pwd, cat, cd and other, implemented on Go.
+Terminal with basic commands such as pwd, cat, cd and other, implemented entirely with Go.
 
-This terminal has basic functionality like: 
+This terminal has basic functionalities like: 
 - starting one command from the list: <code> pwd, cd, ls, cat, cp, mv, mkdir, rm, find and ping </code>
 - exiting with one command from the list: <code> exit, logout and bye </code>
 - running command in background mode (by writing '&')
@@ -15,5 +15,6 @@ When there is some error in parsing or command execution, appropriate messages a
 To build and run locally:
 <pre>
 git clone https://github.com/ilian98/go-terminal.git
+cd go-terminal
 go run main.go
 </pre>
