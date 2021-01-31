@@ -36,6 +36,11 @@ func (f *Find) Clone() ExecuteCommand {
 	return &clone
 }
 
+// InitChannel is a method for initializing stopExecution channel
+func (f *Find) InitChannel() {
+	f.stopExecution = make(chan struct{}, 1)
+}
+
 // StopSignal is a method for registering stop signal of the execution of the command
 // It writes to stopExecution channel
 func (f *Find) StopSignal() {
@@ -55,7 +60,6 @@ func (f *Find) IsStopSignal() bool {
 
 // Execute is go implementation of find command
 func (f *Find) Execute(cp CommandProperties) error {
-	f.stopExecution = make(chan struct{}, 1)
 	f.path = cp.Path
 	_, outputFile := cp.InputFile, cp.OutputFile
 

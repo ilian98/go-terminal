@@ -1,4 +1,4 @@
-// Package interpreter package interpretes command based on its properties and runs it.
+// Package interpreter interpretes command based on its properties and runs it.
 // This is the most important package and can be run almost independentely from the other packages.
 // Only InterpretCommand has parameter of struct parser.Command and main struct Interpreter has a field that is slice of interface commands.ExecuteCommand.
 //
@@ -99,6 +99,7 @@ func (i *Interpreter) ExecuteCommand(name string, arguments []string, options []
 		if bgRun == false { // if we are not in background mode, we should catch Ctrl+C
 			result := make(chan error, 1) // we make a channel for waiting result
 			signalInterrupt := make(chan os.Signal, 1)
+			command.InitChannel()
 			go func() { // we run the command in new go routine to be able to catch os.Intterupt in current go routine
 				result <- command.Execute(cp)
 			}()
@@ -164,7 +165,7 @@ func (i *Interpreter) InterpretCommand(parsedCommand []parser.Command) []Status 
 		}
 	}
 
-	statuses := make(chan Status, len(parsedCommand)) // channel for collecting the statuses of ran commands
+	statuses := make(chan Status, len(parsedCommand)) // channel for collecting the statuses of run commands
 	copyInterpreter := *i                             // we copy the interpreter to not let path change in potential pipe
 	isPipe := false
 	if len(parsedCommand) > 1 {
@@ -210,10 +211,10 @@ func (i *Interpreter) InterpretCommand(parsedCommand []parser.Command) []Status 
 			s = Status{currInterpreter.ExecuteCommand(
 				c.Name, c.Arguments, c.Options, inputFile, outputFile, c.BgRun,
 			), c.Name}
-			statuses <- s
-			if !isPipe && c.BgRun == false { // path can be changed only for one command not in pipe and bg run
+			if !isPipe && !c.BgRun { // path can be changed only for one command not in pipe and bg run
 				i.Path = currInterpreter.Path // we don't have concurrent access to i.Path because it isn't pipe
 			}
+			statuses <- s
 		}(copyInterpreter, c, inputFile, outputFile)
 	}
 

@@ -28,6 +28,11 @@ func (l *Ls) Clone() ExecuteCommand {
 	return &clone
 }
 
+// InitChannel is a method for initializing stopExecution channel
+func (l *Ls) InitChannel() {
+	l.stopExecution = make(chan struct{}, 1)
+}
+
 // StopSignal is a method for registering stop signal of the execution of the command
 // It writes to stopExecution channel
 func (l *Ls) StopSignal() {
@@ -47,7 +52,6 @@ func (l *Ls) IsStopSignal() bool {
 
 // Execute is go implementation of ls command
 func (l *Ls) Execute(cp CommandProperties) error {
-	l.stopExecution = make(chan struct{}, 1)
 	l.path = cp.Path
 	_, outputFile := cp.InputFile, cp.OutputFile
 

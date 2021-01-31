@@ -38,6 +38,11 @@ func (c *Cd) Clone() ExecuteCommand {
 	return &clone
 }
 
+// InitChannel is a method for initializing stopExecution channel
+func (c *Cd) InitChannel() {
+	c.stopExecution = make(chan struct{}, 1)
+}
+
 // StopSignal is a method for registering stop signal of the execution of the command
 // It writes to stopExecution channel
 func (c *Cd) StopSignal() {
@@ -57,7 +62,6 @@ func (c *Cd) IsStopSignal() bool {
 
 // Execute is go implementation of cd command
 func (c *Cd) Execute(cp CommandProperties) error {
-	c.stopExecution = make(chan struct{}, 1)
 	c.path = cp.Path
 
 	if len(cp.Arguments) == 0 {

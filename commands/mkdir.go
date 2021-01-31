@@ -36,6 +36,11 @@ func (m *Mkdir) Clone() ExecuteCommand {
 	return &clone
 }
 
+// InitChannel is a method for initializing stopExecution channel
+func (m *Mkdir) InitChannel() {
+	m.stopExecution = make(chan struct{}, 1)
+}
+
 // StopSignal is a method for registering stop signal of the execution of the command
 // It writes to stopExecution channel
 func (m *Mkdir) StopSignal() {
@@ -55,7 +60,6 @@ func (m *Mkdir) IsStopSignal() bool {
 
 // Execute is go implementation of mkdir command
 func (m *Mkdir) Execute(cp CommandProperties) error {
-	m.stopExecution = make(chan struct{}, 1)
 	m.path = cp.Path
 
 	if len(cp.Arguments) == 0 {

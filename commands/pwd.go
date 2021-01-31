@@ -22,6 +22,11 @@ func (p *Pwd) Clone() ExecuteCommand {
 	return &clone
 }
 
+// InitChannel is a method for initializing stopExecution channel
+func (p *Pwd) InitChannel() {
+	p.stopExecution = make(chan struct{}, 1)
+}
+
 // StopSignal is a method for registering stop signal of the execution of the command
 // It writes to stopExecution channel
 func (p *Pwd) StopSignal() {
@@ -41,7 +46,6 @@ func (p *Pwd) IsStopSignal() bool {
 
 // Execute is go implementation of pwd command
 func (p *Pwd) Execute(cp CommandProperties) error {
-	p.stopExecution = make(chan struct{}, 1)
 	p.path = cp.Path
 	_, outputFile := cp.InputFile, cp.OutputFile
 

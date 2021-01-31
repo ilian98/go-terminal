@@ -31,6 +31,7 @@ type ExecuteCommand interface {
 	GetName() string
 	GetPath() string
 	Clone() ExecuteCommand
+	InitChannel()
 	StopSignal()
 	IsStopSignal() bool
 	Execute(cp CommandProperties) error
