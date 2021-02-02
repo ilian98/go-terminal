@@ -9,7 +9,7 @@ import (
 
 // openInputFile is a function that opens file for input and checks if the fileName is a relative path
 func (i *Interpreter) openInputFile(fileName string) (*os.File, error) {
-	if fileName == "" {
+	if fileName == "" { // empty file name means that input file should be os.Stdin
 		return os.Stdin, nil
 	}
 	file, err := os.Open(commands.FullFileName(i.Path, fileName))
@@ -24,7 +24,7 @@ func (i *Interpreter) openInputFile(fileName string) (*os.File, error) {
 
 // openOutputFile is a function that opens file for output and checks if the fileName is a relative path
 func (i *Interpreter) openOutputFile(fileName string) (*os.File, error) {
-	if fileName == "" {
+	if fileName == "" { // empty file name means that output file should be os.Stdout
 		return os.Stdout, nil
 	}
 	file, err := os.OpenFile(commands.FullFileName(i.Path, fileName), os.O_CREATE|os.O_WRONLY, 0666)

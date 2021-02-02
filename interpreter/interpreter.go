@@ -1,11 +1,11 @@
 // Package interpreter interpretes command based on its properties and runs it.
-// This is the most important package and can be run almost independentely from the other packages.
-// Only InterpretCommand has parameter of struct parser.Command and main struct Interpreter has a field that is slice of interface commands.ExecuteCommand.
+// This is the most important package and can be run almost independentely from the parser package.
+// Only InterpretCommand has parameter of struct parser.Command from that package.
 //
-// Method InterpretCommand should be called with parse information of command stored by package parser.
-// Then it makes a potential pipe of commands each of which is executed with method ExecuteCommand.
+// Method InterpretCommand should be called with parsed information of command stored by package parser.
+// Then it makes a potential pipe of commands each of which is executed concurrently with method ExecuteCommand.
 //
-// Method ExecuteCommand only has information about the command that should be executed with any command that is already registered.
+// Method ExecuteCommand only has information about the command that should be executed from the slice of already registered commands.
 // Methods RegisterExitCommand and RegisterCommand are for registering new commands in the interpreter.
 package interpreter
 
@@ -20,7 +20,7 @@ import (
 	"github.com/ilian98/go-terminal/parser"
 )
 
-// Interpreter is struct for working with parsed commands
+// Interpreter is struct for working with parsed commands, registring and executing commands
 type Interpreter struct {
 	Path              string
 	exitCommands      []string
@@ -83,7 +83,7 @@ func (i *Interpreter) ExecuteCommand(name string, arguments []string, options []
 		return InvalidCommandName
 	}
 
-	// Transform command information to element of struct commands.CommandProperties passed by reference to Execute method of command
+	// Transform command information to element of struct commands.CommandProperties passed to Execute method of command
 	cp := commands.CommandProperties{
 		Path:       i.Path,
 		Arguments:  arguments,
