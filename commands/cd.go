@@ -38,20 +38,20 @@ func (c *Cd) Clone() ExecuteCommand {
 	return &clone
 }
 
-// InitStopCatching is a method for initializing stopExecution channel
-func (c *Cd) InitStopCatching() {
+// InitStopSignalCatching is a method for initializing stopExecution channel
+func (c *Cd) InitStopSignalCatching() {
 	c.stopExecution = make(chan struct{}, 1)
 }
 
-// StopSignal is a method for registering stop signal of the execution of the command
+// SendStopSignal is a method for registering stop signal of the execution of the command
 // It writes to stopExecution channel
-func (c *Cd) StopSignal() {
+func (c *Cd) SendStopSignal() {
 	c.stopExecution <- struct{}{}
 }
 
-// IsStopSignal is a method for checking if stop signal was sent
+// IsStopSignalReceived is a method for checking if stop signal was sent
 // It checks if there is a signal in stopExecution channel
-func (c *Cd) IsStopSignal() bool {
+func (c *Cd) IsStopSignalReceived() bool {
 	select {
 	case <-c.stopExecution:
 		return true
@@ -80,7 +80,7 @@ func (c *Cd) Execute(cp CommandProperties) error {
 
 	tryPath := FullFileName(c.path, path)
 
-	stat, err := os.Stat(tryPath)
+	stat, err := os.Stat(tryPath) // we use stat to check if the path is valid and leading to directory
 	if err == nil && stat.IsDir() {
 		p, err := filepath.Abs(tryPath)
 		if err != nil {

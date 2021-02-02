@@ -22,20 +22,20 @@ func (p *Pwd) Clone() ExecuteCommand {
 	return &clone
 }
 
-// InitStopCatching is a method for initializing stopExecution channel
-func (p *Pwd) InitStopCatching() {
+// InitStopSignalCatching is a method for initializing stopExecution channel
+func (p *Pwd) InitStopSignalCatching() {
 	p.stopExecution = make(chan struct{}, 1)
 }
 
-// StopSignal is a method for registering stop signal of the execution of the command
+// SendStopSignal is a method for registering stop signal of the execution of the command
 // It writes to stopExecution channel
-func (p *Pwd) StopSignal() {
+func (p *Pwd) SendStopSignal() {
 	p.stopExecution <- struct{}{}
 }
 
-// IsStopSignal is a method for checking if stop signal was sent
+// IsStopSignalReceived is a method for checking if stop signal was sent
 // It checks if there is a signal in stopExecution channel
-func (p *Pwd) IsStopSignal() bool {
+func (p *Pwd) IsStopSignalReceived() bool {
 	select {
 	case <-p.stopExecution:
 		return true

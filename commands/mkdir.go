@@ -36,20 +36,20 @@ func (m *Mkdir) Clone() ExecuteCommand {
 	return &clone
 }
 
-// InitStopCatching is a method for initializing stopExecution channel
-func (m *Mkdir) InitStopCatching() {
+// InitStopSignalCatching is a method for initializing stopExecution channel
+func (m *Mkdir) InitStopSignalCatching() {
 	m.stopExecution = make(chan struct{}, 1)
 }
 
-// StopSignal is a method for registering stop signal of the execution of the command
+// SendStopSignal is a method for registering stop signal of the execution of the command
 // It writes to stopExecution channel
-func (m *Mkdir) StopSignal() {
+func (m *Mkdir) SendStopSignal() {
 	m.stopExecution <- struct{}{}
 }
 
-// IsStopSignal is a method for checking if stop signal was sent
+// IsStopSignalReceived is a method for checking if stop signal was sent
 // It checks if there is a signal in stopExecution channel
-func (m *Mkdir) IsStopSignal() bool {
+func (m *Mkdir) IsStopSignalReceived() bool {
 	select {
 	case <-m.stopExecution:
 		return true

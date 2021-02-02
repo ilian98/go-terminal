@@ -28,20 +28,20 @@ func (l *Ls) Clone() ExecuteCommand {
 	return &clone
 }
 
-// InitStopCatching is a method for initializing stopExecution channel
-func (l *Ls) InitStopCatching() {
+// InitStopSignalCatching is a method for initializing stopExecution channel
+func (l *Ls) InitStopSignalCatching() {
 	l.stopExecution = make(chan struct{}, 1)
 }
 
-// StopSignal is a method for registering stop signal of the execution of the command
+// SendStopSignal is a method for registering stop signal of the execution of the command
 // It writes to stopExecution channel
-func (l *Ls) StopSignal() {
+func (l *Ls) SendStopSignal() {
 	l.stopExecution <- struct{}{}
 }
 
-// IsStopSignal is a method for checking if stop signal was sent
+// IsStopSignalReceived is a method for checking if stop signal was sent
 // It checks if there is a signal in stopExecution channel
-func (l *Ls) IsStopSignal() bool {
+func (l *Ls) IsStopSignalReceived() bool {
 	select {
 	case <-l.stopExecution:
 		return true
@@ -73,47 +73,74 @@ func (l *Ls) Execute(cp CommandProperties) error {
 	}
 	if lOption == false {
 		for _, file := range files {
-			checkWrite(l, outputFile, file.Name())
-			if file.IsDir() {
-				checkWrite(l, outputFile, string(os.PathSeparator))
+			if err := checkWrite(l, outputFile, file.Name()); err != nil {
+				return err
 			}
-			outputFile.WriteString("    ")
+			if file.IsDir() {
+				if err := checkWrite(l, outputFile, string(os.PathSeparator)); err != nil {
+					return err
+				}
+			}
+			if err := checkWrite(l, outputFile, "    "); err != nil {
+				return err
+			}
 		}
 		return nil
 	}
 
-	var maxNumberOfDigs int
+	var maxNumberOfDigs int // we count the maximum number of digits so column with file size will be "aligned" right
 	for _, file := range files {
 		if numberOfDigs := len(strconv.Itoa(int(file.Size()))); maxNumberOfDigs < numberOfDigs {
 			maxNumberOfDigs = numberOfDigs
 		}
 	}
 	for _, file := range files {
-		checkWrite(l, outputFile, file.Mode().String())
-		checkWrite(l, outputFile, " ")
+		if err := checkWrite(l, outputFile, file.Mode().String()); err != nil { // we write file mode
+			return err
+		}
+		if err := checkWrite(l, outputFile, " "); err != nil {
+			return err
+		}
 
 		fileSize := strconv.Itoa(int(file.Size()))
 		for i := 0; i < (maxNumberOfDigs - len(fileSize)); i++ {
-			checkWrite(l, outputFile, " ")
+			if err := checkWrite(l, outputFile, " "); err != nil {
+				return err
+			}
 		}
-		checkWrite(l, outputFile, strconv.Itoa(int(file.Size())))
+		if err := checkWrite(l, outputFile, strconv.Itoa(int(file.Size()))); err != nil { // we write file size
+			return err
+		}
 
-		checkWrite(l, outputFile, " ")
-		checkWrite(l, outputFile, outputTime(file.ModTime()))
-		checkWrite(l, outputFile, " ")
+		if err := checkWrite(l, outputFile, " "); err != nil {
+			return err
+		}
+		if err := checkWrite(l, outputFile, outputTime(file.ModTime())); err != nil { // we write the data and time of last modification
+			return err
+		}
+		if err := checkWrite(l, outputFile, " "); err != nil {
+			return err
+		}
 
-		checkWrite(l, outputFile, file.Name())
+		if err := checkWrite(l, outputFile, file.Name()); err != nil { // lastly we write file name
+			return err
+		}
 		if file.IsDir() {
-			checkWrite(l, outputFile, string(os.PathSeparator))
+			if err := checkWrite(l, outputFile, string(os.PathSeparator)); err != nil {
+				return err
+			}
 		}
-		checkWrite(l, outputFile, "\n")
+		if err := checkWrite(l, outputFile, "\n"); err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
+// outputTime function is helper for outputing time and date in format hh:mm dd mmm
 func outputTime(t time.Time) string {
-	outputNumber := func(num string) string {
+	outputNumber := func(num string) string { // another helper function for writing one-digit number with leading zero
 		var output string
 		if len(num) == 1 {
 			output += "0"

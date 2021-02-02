@@ -36,20 +36,20 @@ func (c *Cat) Clone() ExecuteCommand {
 	return &clone
 }
 
-// InitStopCatching is a method for initializing stopExecution channel
-func (c *Cat) InitStopCatching() {
+// InitStopSignalCatching is a method for initializing stopExecution channel
+func (c *Cat) InitStopSignalCatching() {
 	c.stopExecution = make(chan struct{}, 1)
 }
 
-// StopSignal is a method for registering stop signal of the execution of the command
+// SendStopSignal is a method for registering stop signal of the execution of the command
 // It writes to stopExecution channel
-func (c *Cat) StopSignal() {
+func (c *Cat) SendStopSignal() {
 	c.stopExecution <- struct{}{}
 }
 
-// IsStopSignal is a method for checking if stop signal was sent
+// IsStopSignalReceived is a method for checking if stop signal was sent
 // It checks if there is a signal in stopExecution channel
-func (c *Cat) IsStopSignal() bool {
+func (c *Cat) IsStopSignalReceived() bool {
 	select {
 	case <-c.stopExecution:
 		return true

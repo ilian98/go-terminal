@@ -1,4 +1,14 @@
 // Package commands defines the interface for commands, some helper functions and implements the commands.
+//
+// All structures that are for the commands have at least a field for storing the path of the terminal.
+// The methods GetName, GetPath, Clone, InitStopSignalCatching, SendStopSignal and IsStopSignalReceived are all implemented in the same way.
+//
+// The catching of stop signals for all commands is implemented by a field that is a channel for receiving stop signal.
+// InitStopSignalCatching initializes that channel as buffered with space for receiving one signal, SendStopSignal puts a signal in the channel and IsStopSignalReceived tries to receive from that channel.
+//
+// Stopping execution of command is realized by having all i/o operations go through the functions checkRead and checkWrite which first check for stop signal.
+// In this way, when a stop signal is sent to the command, the command won't communicate with the "outside world" anymore.
+// The moment it tries, these functions return error to the command and the command will know it has to stop.
 package commands
 
 import (
@@ -33,16 +43,16 @@ func newCp(Path string, Arguments []string, Options []string) CommandProperties 
 // The interface includes getters for name and path.
 // The Clone method is important - it allows the command to run clean every time by cloning the initial state in interpreter package
 //
-// The method InitStopCatching should be used for initializing the catching of stop signals.
-// The method StopSignal should be used outside (from package interpreter) to send stop signal.
-// The method IsStopSignal should be used by command to check if stop signal is received.
+// The method InitStopSignalCatching should be used for initializing the catching of stop signals.
+// The method SendStopSignal should be used outside (from package interpreter) to send stop signal.
+// The method IsStopSignalReceived should be used by command to check if stop signal is received.
 type ExecuteCommand interface {
 	GetName() string
 	GetPath() string
 	Clone() ExecuteCommand
-	InitStopCatching()
-	StopSignal()
-	IsStopSignal() bool
+	InitStopSignalCatching()
+	SendStopSignal()
+	IsStopSignalReceived() bool
 	Execute(cp CommandProperties) error
 }
 
@@ -79,7 +89,7 @@ func getRootPath(path string) string {
 
 // checkRead function is very important - it reads from file, checking if there is a stop signal and also checking for error in reading
 func checkRead(e ExecuteCommand, inputFile *os.File) (string, error) {
-	if e.IsStopSignal() == true {
+	if e.IsStopSignalReceived() == true {
 		return "", ErrStoppedExec
 	}
 	var buf = make([]byte, 1<<4)
@@ -92,7 +102,7 @@ func checkRead(e ExecuteCommand, inputFile *os.File) (string, error) {
 
 // checkWrite function is very important - it writes to file, checking if there is a stop signal and also checking for error in writing
 func checkWrite(e ExecuteCommand, outputFile *os.File, text string) error {
-	if e.IsStopSignal() == true {
+	if e.IsStopSignalReceived() == true {
 		return ErrStoppedExec
 	}
 	n, err := outputFile.WriteString(text)

@@ -36,20 +36,20 @@ func (f *Find) Clone() ExecuteCommand {
 	return &clone
 }
 
-// InitStopCatching is a method for initializing stopExecution channel
-func (f *Find) InitStopCatching() {
+// InitStopSignalCatching is a method for initializing stopExecution channel
+func (f *Find) InitStopSignalCatching() {
 	f.stopExecution = make(chan struct{}, 1)
 }
 
-// StopSignal is a method for registering stop signal of the execution of the command
+// SendStopSignal is a method for registering stop signal of the execution of the command
 // It writes to stopExecution channel
-func (f *Find) StopSignal() {
+func (f *Find) SendStopSignal() {
 	f.stopExecution <- struct{}{}
 }
 
-// IsStopSignal is a method for checking if stop signal was sent
+// IsStopSignalReceived is a method for checking if stop signal was sent
 // It checks if there is a signal in stopExecution channel
-func (f *Find) IsStopSignal() bool {
+func (f *Find) IsStopSignalReceived() bool {
 	select {
 	case <-f.stopExecution:
 		return true

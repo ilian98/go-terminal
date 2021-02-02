@@ -99,15 +99,15 @@ func (i *Interpreter) ExecuteCommand(name string, arguments []string, options []
 		if bgRun == false { // if we are not in background mode, we should catch Ctrl+C
 			result := make(chan error, 1) // we make a channel for waiting result
 			signalInterrupt := make(chan os.Signal, 1)
-			command.InitStopCatching()
+			command.InitStopSignalCatching()
 			go func() { // we run the command in new go routine to be able to catch os.Intterupt in current go routine
 				result <- command.Execute(cp)
 			}()
 			signal.Notify(signalInterrupt, os.Interrupt)
 			select {
 			case <-signalInterrupt:
-				command.StopSignal() // we send stop signal to executing command
-				runtime.Goexit()     // we stop current goroutine
+				command.SendStopSignal() // we send stop signal to executing command
+				runtime.Goexit()         // we stop current goroutine
 			case err := <-result:
 				if err != nil {
 					fmt.Printf("%v\n", err)
