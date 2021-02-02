@@ -66,8 +66,17 @@ func (m *Mkdir) Execute(cp CommandProperties) error {
 		return ErrRmNoArgs
 	}
 
-	var errStrings []string
+	var errStrings []string // in slice errStrings we collect all the errors
 	for _, argument := range cp.Arguments {
+		if m.IsStopSignalReceived() == true {
+			if len(errStrings) > 0 {
+				if len(errStrings) > 0 {
+					return errors.New(strings.Join(errStrings, "\n"))
+				}
+				return nil
+			}
+		}
+
 		fullName := FullFileName(m.path, argument)
 		_, err := os.Stat(fullName)
 

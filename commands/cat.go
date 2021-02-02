@@ -69,19 +69,20 @@ func (c *Cat) Execute(cp CommandProperties) error {
 			if len(text) == 0 {
 				break
 			}
+			if err != nil && err != io.EOF {
+				return err
+			}
 			if err := checkWrite(c, outputFile, text); err != nil {
 				return err
 			}
 			if err == io.EOF {
 				break
-			} else if err != nil {
-				return err
 			}
 		}
 		return nil
 	}
 
-	if len(cp.Arguments) == 0 {
+	if len(cp.Arguments) == 0 { // when there are no arguments, cat command reads from inputFile
 		err := outputFileData(inputFile)
 		if err != nil {
 			return err
@@ -100,7 +101,7 @@ func (c *Cat) Execute(cp CommandProperties) error {
 		return nil
 	}
 
-	var errStrings []string
+	var errStrings []string // in slice errStrings we collect all the errors
 	for _, argument := range cp.Arguments {
 		file, err := os.Open(c.path + string(os.PathSeparator) + argument)
 		if os.IsNotExist(err) {
@@ -110,6 +111,12 @@ func (c *Cat) Execute(cp CommandProperties) error {
 		} else {
 			err := outputFileData(file)
 			file.Close()
+			if err == ErrStoppedExec {
+				if len(errStrings) == 0 {
+					return nil
+				}
+				return errors.New(strings.Join(errStrings, "\n"))
+			}
 			if err != nil {
 				errStrings = append(errStrings, fmt.Errorf("%s - %w", argument, err).Error())
 			}

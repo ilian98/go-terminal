@@ -116,7 +116,7 @@ func TestPipe(t *testing.T) {
 		{"pwd | cat\n", "", testPath},
 		{"cat TestPipe TestPipe | cat | cat | cat | cat\n", "test4", "test4test4"},
 		{"ping noibg.com | cd\n", "", "write |1: The pipe is being closed.\n"},
-		{"pwd | ls -l | cmd1 | cd\n", "", "No command with name: cmd1\n"},
+		{"cmd1 | cd\n", "", "No command with name: cmd1\n"},
 	}
 
 	file, err := os.Create("TestPipe")

@@ -77,8 +77,15 @@ func (r *Rm) Execute(cp CommandProperties) error {
 		}
 	}
 
-	var errStrings []string
+	var errStrings []string // in slice errStrings we collect all the errors
 	for _, argument := range cp.Arguments {
+		if r.IsStopSignalReceived() == true {
+			if len(errStrings) > 0 {
+				return errors.New(strings.Join(errStrings, "\n"))
+			}
+			return nil
+		}
+
 		fullName := FullFileName(r.path, argument)
 		stat, err := os.Stat(fullName)
 

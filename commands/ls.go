@@ -122,7 +122,7 @@ func (l *Ls) Execute(cp CommandProperties) error {
 			return err
 		}
 
-		if err := checkWrite(l, outputFile, file.Name()); err != nil { // lastly we write file name
+		if err := checkWrite(l, outputFile, file.Name()); err != nil { // lastly in row we write file name
 			return err
 		}
 		if file.IsDir() {
@@ -138,7 +138,7 @@ func (l *Ls) Execute(cp CommandProperties) error {
 	return nil
 }
 
-// outputTime function is helper for outputing time and date in format hh:mm dd mmm
+// outputTime function is helper for writing time and date in format hh:mm dd mmm
 func outputTime(t time.Time) string {
 	outputNumber := func(num string) string { // another helper function for writing one-digit number with leading zero
 		var output string

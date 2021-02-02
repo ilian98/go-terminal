@@ -68,12 +68,26 @@ func (f *Find) Execute(cp CommandProperties) error {
 	}
 
 	var errStrings []string
+	returnFunc := func() error {
+		if len(errStrings) == 0 {
+			return nil
+		}
+		return errors.New(strings.Join(errStrings, "\n"))
+	}
+
 	for _, argument := range cp.Arguments {
+		if f.IsStopSignalReceived() == true {
+			return returnFunc()
+		}
+
 		err := filepath.Walk(f.path, func(path string, info os.FileInfo, err error) error {
+			if f.IsStopSignalReceived() == true {
+				return ErrStoppedExec
+			}
 			if err != nil {
 				return err
 			}
-			s := strings.Split(path, string(os.PathSeparator))
+			s := strings.Split(path, string(os.PathSeparator)) // we split the path so we can only check the short name
 			if len(s) > 0 && s[len(s)-1] == argument {
 				if err := checkWrite(f, outputFile, argument+" found - "+path+"\n"); err != nil {
 					return err
@@ -86,13 +100,12 @@ func (f *Find) Execute(cp CommandProperties) error {
 			if err := checkWrite(f, outputFile, argument+" not found\n"); err != nil {
 				return err
 			}
+		} else if err == ErrStoppedExec {
+			return returnFunc()
 		} else if err != ErrFindFound {
 			errStrings = append(errStrings, err.Error())
 		}
 	}
 
-	if len(errStrings) == 0 {
-		return nil
-	}
-	return errors.New(strings.Join(errStrings, "\n"))
+	return returnFunc()
 }

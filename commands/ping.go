@@ -12,7 +12,7 @@ import (
 var (
 	// ErrPingOneArg indicates that the ping command has different argument count from 1
 	ErrPingOneArg = errors.New("One argument is needed")
-	// ErrPingDial indicates that dial return error and suggests possible reasons
+	// ErrPingDial indicates that dial returned error and suggests possible reasons
 	ErrPingDial = errors.New("possible reasons are Internet connectivity problem or host unreachability")
 )
 
@@ -100,7 +100,7 @@ func (p *Ping) Execute(cp CommandProperties) error {
 		ch := make(chan struct {
 			net.Conn
 			error
-		}, 1)
+		}, 1) // channel for collecting possible error
 		startTime := time.Now()
 		go func() {
 			connection, err := net.DialTimeout("tcp", p.host+":"+port, DefaultDialTimeOut)
@@ -109,7 +109,7 @@ func (p *Ping) Execute(cp CommandProperties) error {
 				error
 			}{connection, err}
 		}()
-		endTime := startTime
+		endTime := startTime // default value for endTime
 
 		select {
 		case result := <-ch:
@@ -161,6 +161,7 @@ func (p *Ping) Execute(cp CommandProperties) error {
 	return nil
 }
 
+// outputStatistics function is helper for writing number of sent, received, lost packets, minTime, maxTime and averageTime of pings
 func (p *Ping) outputStatistics(outputFile *os.File, cntReceived int, times []time.Duration) error {
 	if err := checkWrite(p, outputFile, "Ping statistics for "); err != nil {
 		return err
@@ -207,6 +208,7 @@ func (p *Ping) outputStatistics(outputFile *os.File, cntReceived int, times []ti
 	return nil
 }
 
+// minimumTime function is helper for finding minimum time in the slice parameter
 func minimumTime(times []time.Duration) time.Duration {
 	min := times[0]
 	for _, time := range times[1:] {
@@ -216,6 +218,8 @@ func minimumTime(times []time.Duration) time.Duration {
 	}
 	return min
 }
+
+// maximumTime function is helper for finding maximum time in the slice parameter
 func maximumTime(times []time.Duration) time.Duration {
 	max := times[0]
 	for _, time := range times[1:] {
@@ -225,6 +229,8 @@ func maximumTime(times []time.Duration) time.Duration {
 	}
 	return max
 }
+
+// averageTime function is helper for finding average time for the slice parameter
 func averageTime(times []time.Duration) time.Duration {
 	sum := times[0]
 	for _, time := range times[1:] {
