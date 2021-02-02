@@ -1,3 +1,4 @@
+// Package commands defines the interface for commands, some helper functions and implements the commands.
 package commands
 
 import (
@@ -9,7 +10,7 @@ import (
 )
 
 var (
-	// ErrStoppedExec indicates that execution for command is stopped
+	// ErrStoppedExec indicates that the execution of command was stopped
 	ErrStoppedExec = errors.New("execution was stopped")
 )
 
@@ -22,16 +23,24 @@ type CommandProperties struct {
 	OutputFile *os.File // OutputFile is used for reading the input it could be stdin
 }
 
+// Function for constructing CommandProperties object with only path, arguments and options
 func newCp(Path string, Arguments []string, Options []string) CommandProperties {
 	return CommandProperties{Path, Arguments, Options, os.Stdin, os.Stdout}
 }
 
 // ExecuteCommand is interface for executing commands
+//
+// The interface includes getters for name and path.
+// The Clone method is important - it allows the command to run clean every time by cloning the initial state in interpreter package
+//
+// The method InitStopCatching should be used for initializing the catching of stop signals.
+// The method StopSignal should be used outside (from package interpreter) to send stop signal.
+// The method IsStopSignal should be used by command to check if stop signal is received.
 type ExecuteCommand interface {
 	GetName() string
 	GetPath() string
 	Clone() ExecuteCommand
-	InitChannel()
+	InitStopCatching()
 	StopSignal()
 	IsStopSignal() bool
 	Execute(cp CommandProperties) error
@@ -56,23 +65,19 @@ func FullFileName(path string, fileName string) string {
 	return fullName
 }
 
+// getRootPath function is used to extract root path from a valid path
 func getRootPath(path string) string {
 	if runtime.GOOS == "windows" {
 		// path delimiter in Windows is \
 		res := strings.SplitAfterN(path, `\`, 2)
-		if len(res) == 0 {
-			panic("Cannot get root path!")
-		}
 		return res[0]
 	}
 	// path delimiter in Unix-like OS-es is /
 	res := strings.SplitAfterN(path, `/`, 2)
-	if len(res) == 0 {
-		panic("Cannot get root path!")
-	}
 	return res[0]
 }
 
+// checkRead function is very important - it reads from file, checking if there is a stop signal and also checking for error in reading
 func checkRead(e ExecuteCommand, inputFile *os.File) (string, error) {
 	if e.IsStopSignal() == true {
 		return "", ErrStoppedExec
@@ -85,6 +90,7 @@ func checkRead(e ExecuteCommand, inputFile *os.File) (string, error) {
 	return strings.TrimRight(string(buf), "\u0000"), nil
 }
 
+// checkWrite function is very important - it writes to file, checking if there is a stop signal and also checking for error in writing
 func checkWrite(e ExecuteCommand, outputFile *os.File, text string) error {
 	if e.IsStopSignal() == true {
 		return ErrStoppedExec

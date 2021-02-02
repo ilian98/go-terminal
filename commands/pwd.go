@@ -22,8 +22,8 @@ func (p *Pwd) Clone() ExecuteCommand {
 	return &clone
 }
 
-// InitChannel is a method for initializing stopExecution channel
-func (p *Pwd) InitChannel() {
+// InitStopCatching is a method for initializing stopExecution channel
+func (p *Pwd) InitStopCatching() {
 	p.stopExecution = make(chan struct{}, 1)
 }
 

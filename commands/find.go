@@ -36,8 +36,8 @@ func (f *Find) Clone() ExecuteCommand {
 	return &clone
 }
 
-// InitChannel is a method for initializing stopExecution channel
-func (f *Find) InitChannel() {
+// InitStopCatching is a method for initializing stopExecution channel
+func (f *Find) InitStopCatching() {
 	f.stopExecution = make(chan struct{}, 1)
 }
 

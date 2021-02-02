@@ -99,7 +99,7 @@ func (i *Interpreter) ExecuteCommand(name string, arguments []string, options []
 		if bgRun == false { // if we are not in background mode, we should catch Ctrl+C
 			result := make(chan error, 1) // we make a channel for waiting result
 			signalInterrupt := make(chan os.Signal, 1)
-			command.InitChannel()
+			command.InitStopCatching()
 			go func() { // we run the command in new go routine to be able to catch os.Intterupt in current go routine
 				result <- command.Execute(cp)
 			}()

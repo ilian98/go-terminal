@@ -40,8 +40,8 @@ func (c *Cp) Clone() ExecuteCommand {
 	return &clone
 }
 
-// InitChannel is a method for initializing stopExecution channel
-func (c *Cp) InitChannel() {
+// InitStopCatching is a method for initializing stopExecution channel
+func (c *Cp) InitStopCatching() {
 	c.stopExecution = make(chan struct{}, 1)
 }
 

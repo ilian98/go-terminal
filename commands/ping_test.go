@@ -63,13 +63,13 @@ func TestPing(t *testing.T) {
 		{[]string{}, "", ErrPingOneArg},
 		{[]string{"google.com", "google.com"}, "", ErrPingOneArg},
 		{[]string{"1"}, "Pinging 1", ErrPingDial},
-		{[]string{"noibg.com"},
-			`Pinging noibg.com
+		{[]string{"95.43.237.143"},
+			`Pinging 95.43.237.143
 Request timed out.
 Request timed out.
 Request timed out.
 Request timed out.
-Ping statistics for noibg.com:` + "\n    Packets: Sent = 4, Received = 0, Lost = 4 (100% loss)", nil},
+Ping statistics for 95.43.237.143:` + "\n    Packets: Sent = 4, Received = 0, Lost = 4 (100% loss)", nil},
 		{[]string{"google.com"}, "Pinging google.com [", nil},
 	}
 

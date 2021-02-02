@@ -36,8 +36,8 @@ func (m *Mkdir) Clone() ExecuteCommand {
 	return &clone
 }
 
-// InitChannel is a method for initializing stopExecution channel
-func (m *Mkdir) InitChannel() {
+// InitStopCatching is a method for initializing stopExecution channel
+func (m *Mkdir) InitStopCatching() {
 	m.stopExecution = make(chan struct{}, 1)
 }
 
