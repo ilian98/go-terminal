@@ -6,7 +6,7 @@
 // The catching of stop signals for all commands is implemented by a field that is a channel for receiving stop signal.
 // InitStopSignalCatching initializes that channel as buffered with space for receiving one signal, SendStopSignal puts a signal in the channel and IsStopSignalReceived tries to receive from that channel.
 //
-// Stopping execution of command is realized by having all i/o operations go through the functions checkRead and checkWrite which first check for stop signal.
+// Stopping execution of command is implemented by having all i/o operations go through the functions checkRead and checkWrite which first check for stop signal.
 // In this way, when a stop signal is sent to the command, the command won't communicate with the "outside world" anymore.
 // The moment it tries, these functions return error to the command and the command will know it has to stop.
 package commands

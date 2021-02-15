@@ -35,9 +35,6 @@ func init() { // registering commands in interpreter
 func main() {
 	path, err := os.Getwd()
 	if err != nil {
-		panic("Fatal error - cannot get current path!")
-	}
-	if err != nil {
 		fmt.Printf("Fatal error: %v\n", err)
 		os.Exit(1)
 	}
